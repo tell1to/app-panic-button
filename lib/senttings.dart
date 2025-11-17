@@ -12,21 +12,102 @@ class _SenttingsPageState extends State<SenttingsPage> {
   bool _location = true;
   bool _autoCall = false;
 
-  // Variables de Perfil
+  // Variables del perfil
   String _nombres = "";
   String _apellidos = "";
   String _edad = "";
   List<String> _enfermedades = [];
 
   final List<String> enfermedadesCatastroficas = [
-    'Cáncer',
-    'Insuficiencia renal',
-    'Cardiopatía grave',
-    'Esclerosis múltiple',
-    'Trasplante de órganos'
+    'Cáncer', 'Insuficiencia renal', 'Cardiopatía grave', 'Esclerosis múltiple', 'Trasplante de órganos'
   ];
 
-  // Funciones para cada Switch
+  // Contactos
+  List<Map<String, String>> _contactos = [
+    {'nombre': 'Contacto 1', 'telefono': '+1 234 567 890'},
+    {'nombre': 'Contacto 2', 'telefono': '+1 234 567 891'},
+  ];
+
+  // Función para mostrar cuadro de diálogo para agregar/editar contacto
+  void _showContactoDialog({int? index}) {
+    String initialNombre = index != null ? _contactos[index]['nombre'] ?? '' : '';
+    String initialTelefono = index != null ? _contactos[index]['telefono'] ?? '' : '';
+
+    final nombreController = TextEditingController(text: initialNombre);
+    final telefonoController = TextEditingController(text: initialTelefono);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(index == null ? 'Nuevo contacto' : 'Editar contacto'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Nombre del responsable'),
+                  controller: nombreController,
+                ),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Número de teléfono'),
+                  keyboardType: TextInputType.phone,
+                  controller: telefonoController,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cerrar'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            ElevatedButton(
+              child: const Text('Guardar'),
+              onPressed: () {
+                setState(() {
+                  if (index == null) {
+                    _contactos.add({'nombre': nombreController.text, 'telefono': telefonoController.text});
+                  } else {
+                    _contactos[index] = {'nombre': nombreController.text, 'telefono': telefonoController.text};
+                  }
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Función para mostrar cuadro de diálogo de confirmación de borrado
+  void _showDeleteConfirmDialog(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar contacto'),
+        content: const Text('¿Seguro que deseas eliminar este contacto?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          ElevatedButton(
+            child: const Text('Eliminar'),
+            onPressed: () {
+              setState(() {
+                _contactos.removeAt(index);
+              });
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Resto: Perfil, Alertas y Notificaciones ---
   Future<void> _toggleNotifications(bool value) async {
     setState(() => _notifications = value);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -34,7 +115,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
         value ? 'Notificaciones activadas' : 'Notificaciones desactivadas'
       )),
     );
-    // Aquí integras la lógica real (Firebase Messaging, etc.)
   }
 
   Future<void> _toggleLocation(bool value) async {
@@ -44,7 +124,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
         value ? 'Compartiendo ubicación GPS' : 'Ubicación GPS desactivada'
       )),
     );
-    // Aquí integras la lógica real (Geolocator, etc.)
   }
 
   Future<void> _toggleAutoCall(bool value) async {
@@ -54,14 +133,12 @@ class _SenttingsPageState extends State<SenttingsPage> {
         value ? 'Llamada automática activada' : 'Llamada automática desactivada'
       )),
     );
-    // Aquí integras la lógica real (url_launcher para llamadas)
   }
 
-  // Cuadro de edición de perfil
   void _showEditProfileDialog() {
-    String nombres = _nombres;
-    String apellidos = _apellidos;
-    String edad = _edad;
+    final nombresController = TextEditingController(text: _nombres);
+    final apellidosController = TextEditingController(text: _apellidos);
+    final edadController = TextEditingController(text: _edad);
     List<String> enfermedadesSeleccionadas = List.from(_enfermedades);
 
     showDialog(
@@ -78,19 +155,16 @@ class _SenttingsPageState extends State<SenttingsPage> {
                   children: [
                     TextField(
                       decoration: const InputDecoration(labelText: 'Nombres'),
-                      controller: TextEditingController(text: nombres),
-                      onChanged: (v) => setDialogState(() => nombres = v),
+                      controller: nombresController,
                     ),
                     TextField(
                       decoration: const InputDecoration(labelText: 'Apellidos'),
-                      controller: TextEditingController(text: apellidos),
-                      onChanged: (v) => setDialogState(() => apellidos = v),
+                      controller: apellidosController,
                     ),
                     TextField(
                       decoration: const InputDecoration(labelText: 'Edad'),
                       keyboardType: TextInputType.number,
-                      controller: TextEditingController(text: edad),
-                      onChanged: (v) => setDialogState(() => edad = v),
+                      controller: edadController,
                     ),
                     const SizedBox(height: 8),
                     const Text('Enfermedad(es) catastrófica:', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -122,9 +196,9 @@ class _SenttingsPageState extends State<SenttingsPage> {
                   child: const Text('Guardar'),
                   onPressed: () {
                     setState(() {
-                      _nombres = nombres;
-                      _apellidos = apellidos;
-                      _edad = edad;
+                      _nombres = nombresController.text;
+                      _apellidos = apellidosController.text;
+                      _edad = edadController.text;
                       _enfermedades = enfermedadesSeleccionadas;
                     });
                     Navigator.of(context).pop();
@@ -240,38 +314,44 @@ class _SenttingsPageState extends State<SenttingsPage> {
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
-                children: <Widget>[
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.blue.shade50,
-                      child: const Icon(Icons.phone, color: Colors.blue),
-                    ),
-                    title: const Text('Contacto 1', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('+1 234 567 890', style: TextStyle(fontSize: 13)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        TextButton(onPressed: () {}, child: const Text('Editar', style: TextStyle(color: Colors.red))),
-                        IconButton(onPressed: () {}, icon: const Icon(Icons.delete_outline), color: Colors.grey),
+                children: [
+                  ..._contactos.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final contacto = entry.value;
+                    return Column(
+                      children: [
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          leading: CircleAvatar(
+                            backgroundColor: idx % 2 == 0 ? Colors.blue.shade50 : Colors.green.shade50,
+                            child: const Icon(Icons.phone, color: Colors.blue),
+                          ),
+                          title: Text(contacto['nombre'] ?? '',
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text(contacto['telefono'] ?? '', style: const TextStyle(fontSize: 13)),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton(
+                                onPressed: () => _showContactoDialog(index: idx),
+                                child: const Text('Editar', style: TextStyle(color: Colors.red)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                color: Colors.grey,
+                                onPressed: () => _showDeleteConfirmDialog(idx),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1),
                       ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.green.shade50,
-                      child: const Icon(Icons.phone, color: Colors.green),
-                    ),
-                    title: const Text('Contacto 2', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('+1 234 567 891', style: TextStyle(fontSize: 13)),
-                    trailing: TextButton(onPressed: () {}, child: const Text('Editar', style: TextStyle(color: Colors.red))),
-                  ),
+                    );
+                  }),
                   Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => _showContactoDialog(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black,
                         side: BorderSide(color: Colors.grey.shade400),
@@ -294,7 +374,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
               padding: EdgeInsets.only(bottom: 8.0),
               child: Text('Seguridad y Privacidad', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             ),
-
+            
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
