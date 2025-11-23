@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'options.dart';
 import 'senttings.dart';
+import 'preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -89,9 +91,16 @@ class _InicioPageState extends State<InicioPage> {
   double _holdProgress = 0.0;
   Timer? _holdTimer;
   final int _holdDurationMs = 1200; // 1.2 seconds to activate (reduced)
+  // Current preferred contact (from Settings). If null, fallback to '911'.
+  Map<String, String>? _preferredContact;
+  // Which of the two small buttons on Inicio is set as favorite: 0 = 911, 1 = contacto
+  int _mainFavoriteIndex = 0;
+  static const String _mainFavoriteKey = 'main_favorite_index';
+  late VoidCallback _preferredListener;
 
   Future<void> _callNumber(BuildContext context, String number) async {
-    final Uri uri = Uri(scheme: 'tel', path: number);
+    final String normalized = _normalizePhone(number);
+    final Uri uri = Uri(scheme: 'tel', path: normalized);
     try {
       if (!await launchUrl(uri)) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +112,12 @@ class _InicioPageState extends State<InicioPage> {
         SnackBar(content: Text('Error: $e')),
       );
     }
+  }
+
+  // Normalize phone numbers to digits and leading + (e.g. "+51 9 1234 567" -> "+5191234567")
+  String _normalizePhone(String phone) {
+    if (phone.isEmpty) return phone;
+    return phone.replaceAll(RegExp(r'[^+\d]'), '');
   }
 
   void _startHold() {
@@ -136,6 +151,20 @@ class _InicioPageState extends State<InicioPage> {
       final dyn = optionsPageKey.currentState as dynamic;
       dyn?.addAlert(datetime: DateTime.now(), location: '', description: 'Alerta activada desde botón de pánico', status: 'Alerta');
     } catch (_) {}
+    // Decide which of the two main buttons is marked as favorite and call that.
+    String numberToCall = '911';
+    if (_mainFavoriteIndex == 1) {
+      if (_preferredContact != null && (_preferredContact!['telefono']?.isNotEmpty ?? false)) {
+        numberToCall = _preferredContact!['telefono']!;
+      } else {
+        // Fallback to 911 if Settings has no preferred contact
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));
+        numberToCall = '911';
+      }
+    } else {
+      numberToCall = '911';
+    }
+    _callNumber(context, numberToCall);
     Future.delayed(const Duration(milliseconds: 800), () {
       setState(() => _holdProgress = 0.0);
     });
@@ -143,8 +172,50 @@ class _InicioPageState extends State<InicioPage> {
 
   @override
   void dispose() {
+    // remove notifier listener to avoid calling setState after dispose
+    try {
+      preferredContact.removeListener(_preferredListener);
+    } catch (_) {}
     _holdTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _setMainFavorite(int index) async {
+    setState(() {
+      _mainFavoriteIndex = index;
+    });
+    // persist selection
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setInt(_mainFavoriteKey, index);
+    } catch (_) {}
+    final label = index == 0 ? '911' : (_preferredContact?['nombre'] ?? 'Contacto');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Botón favorito: $label')));
+  }
+
+  // Preferred is now managed globally from Settings via `preferredContactNumber`.
+  @override
+  void initState() {
+    super.initState();
+    // Listen to global preferred contact from Settings
+    _preferredListener = () {
+      if (!mounted) return;
+      setState(() {
+        _preferredContact = preferredContact.value;
+      });
+    };
+    preferredContact.addListener(_preferredListener);
+    // Load persisted preferred contact (if any)
+    loadPreferredContact();
+    // Load persisted main favorite index
+    SharedPreferences.getInstance().then((sp) {
+      final val = sp.getInt(_mainFavoriteKey) ?? 0;
+      if (mounted) {
+        setState(() {
+          _mainFavoriteIndex = val;
+        });
+      }
+    });
   }
 
   @override
@@ -157,6 +228,11 @@ class _InicioPageState extends State<InicioPage> {
     final double progressDiameter = emergencyDiameter * 0.86;
 
     const double buttonBarHeight = 64.0;
+    // responsive sizes for the two small buttons (calculated outside the widget tree)
+    // buttons share space using Expanded; no per-button width constants required
+    // buttons use Expanded now, no fixed per-button width calculation needed
+    final double buttonHeight = (media.size.height * 0.07).clamp(44.0, 64.0);
+
     return Container(
       color: const Color(0xFFFFF5F6),
       child: Padding(
@@ -204,7 +280,7 @@ class _InicioPageState extends State<InicioPage> {
                               Icon(Icons.contacts, color: Colors.purple, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
                               const SizedBox(height: 8),
                               Text('Contactos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text('2 activos', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
+                              Text('2 Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
                             ],
                           ),
                         ),
@@ -248,7 +324,7 @@ class _InicioPageState extends State<InicioPage> {
                       width: emergencyDiameter,
                       height: emergencyDiameter,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: const Color.fromARGB(255, 240, 35, 20),
                         shape: BoxShape.circle,
                         boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.45), blurRadius: 18, spreadRadius: 4)],
                       ),
@@ -285,38 +361,122 @@ class _InicioPageState extends State<InicioPage> {
                 ),
               ),
               Positioned(
-                left: 0,
-                right: 0,
-                bottom: media.padding.bottom + 12,
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _callNumber(context, '911'),
-                        icon: const Icon(Icons.call),
-                        label: const Text('911', style: TextStyle(color: Colors.white),),
-                        
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 237, 100, 32),
-                          minimumSize: const Size.fromHeight(56),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                left: 16,
+                right: 16,
+                bottom: (media.size.height * 0.12).clamp(12.0, 140.0),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 911 button (now configures favorite instead of calling directly)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 7.0),
+                          child: SizedBox(
+                            height: buttonHeight,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () => _setMainFavorite(0),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _mainFavoriteIndex == 0 ? Colors.orange : const Color.fromARGB(255, 9, 127, 238),
+                                    minimumSize: Size(0, buttonHeight),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: const [
+                                      Icon(Icons.call, color: Colors.white, size: 22),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text('911', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (_mainFavoriteIndex == 0)
+                                  Positioned(
+                                    top: 6,
+                                    right: 6,
+                                    child: Container(
+                                      decoration: BoxDecoration(color: Colors.yellow.shade700, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+                                      padding: const EdgeInsets.all(6),
+                                      child: const Icon(Icons.star, size: 20, color: Colors.white),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _callNumber(context, '+1234567890'),
-                        icon: const Icon(Icons.phone),
-                        label: const Text('Contacto 1', style: TextStyle(color: Colors.white),),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          minimumSize: const Size.fromHeight(56),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      const SizedBox(width: 14),
+                      // Preferred contact button (shows name if set)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 7.0),
+                          child: SizedBox(
+                            height: buttonHeight,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () => _setMainFavorite(1),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _mainFavoriteIndex == 1 ? Colors.orange : (_preferredContact == null ? Colors.grey : Colors.green),
+                                    minimumSize: Size(0, buttonHeight),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: [
+                                      const Icon(Icons.person, color: Colors.white, size: 22),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _preferredContact?['nombre'] ?? 'Contacto',
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              _preferredContact?['telefono'] ?? '',
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (_mainFavoriteIndex == 1)
+                                  Positioned(
+                                    top: 6,
+                                    right: 6,
+                                    child: Container(
+                                      decoration: BoxDecoration(color: Colors.yellow.shade700, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+                                      padding: const EdgeInsets.all(6),
+                                      child: const Icon(Icons.star, size: 20, color: Colors.white),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'preferences.dart';
 
 class SenttingsPage extends StatefulWidget {
   const SenttingsPage({super.key});
@@ -123,9 +124,14 @@ class _SenttingsPageState extends State<SenttingsPage> {
           ),
           ElevatedButton(
             child: const Text('Eliminar'),
-            onPressed: () {
+            onPressed: () async {
               setState(() {
-                _contactos.removeAt(index);
+                final removed = _contactos.removeAt(index);
+                final removedPhone = removed['telefono'];
+                if (preferredContact.value != null && preferredContact.value!['telefono'] == removedPhone) {
+                  // clear persisted favorite as well
+                  setPreferredContact(null);
+                }
               });
               Navigator.of(context).pop();
             },
@@ -377,6 +383,27 @@ class _SenttingsPageState extends State<SenttingsPage> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              // Favorite star (uses global notifier)
+                              ValueListenableBuilder<Map<String, String>?>(
+                                valueListenable: preferredContact,
+                                builder: (context, fav, _) {
+                                  final bool isFav = fav != null && fav['telefono'] == (contacto['telefono'] ?? '');
+                                  return IconButton(
+                                    icon: Icon(isFav ? Icons.star : Icons.star_border),
+                                    color: isFav ? Colors.amber : Colors.grey,
+                                    onPressed: () async {
+                                      if (isFav) {
+                                        await setPreferredContact(null);
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contacto favorito removido')));
+                                      } else {
+                                        await setPreferredContact({'nombre': contacto['nombre'] ?? '', 'telefono': contacto['telefono'] ?? ''});
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contacto marcado como favorito')));
+                                      }
+                                      setState(() {});
+                                    },
+                                  );
+                                },
+                              ),
                               TextButton(
                                 onPressed: () => _showContactoDialog(index: idx),
                                 child: const Text('Editar', style: TextStyle(color: Colors.red)),
