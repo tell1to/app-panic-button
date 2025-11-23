@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_selector/file_selector.dart';
 
 import 'preferences.dart';
 
@@ -16,7 +17,19 @@ class SenttingsPage extends StatefulWidget {
 class _SenttingsPageState extends State<SenttingsPage> {
   bool _notifications = true;
   bool _location = true;
-  bool _autoCall = false;
+  // removed automatic call toggle per request
+
+  // Profile photo bytes (persisted as base64)
+  Uint8List? _profilePhoto;
+  static const String _profilePhotoKey = 'profile_photo_base64';
+
+  // Profile data keys
+  static const String _profileNameKey = 'profile_nombres';
+  static const String _profileLastKey = 'profile_apellidos';
+  static const String _profileAgeKey = 'profile_edad';
+  static const String _profileDiseasesKey = 'profile_enfermedades';
+
+  // Privacy explanatory text (no persistent toggle)
 
   // Variables del perfil
   String _nombres = "";
@@ -37,7 +50,58 @@ class _SenttingsPageState extends State<SenttingsPage> {
   void initState() {
     super.initState();
     _loadContacts();
+    _loadProfilePhoto();
+    _loadProfileData();
   }
+
+  Future<void> _loadProfileData() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final nombres = sp.getString(_profileNameKey) ?? '';
+      final apellidos = sp.getString(_profileLastKey) ?? '';
+      final edad = sp.getString(_profileAgeKey) ?? '';
+      final enfermedades = sp.getStringList(_profileDiseasesKey) ?? [];
+      if (!mounted) return;
+      setState(() {
+        _nombres = nombres;
+        _apellidos = apellidos;
+        _edad = edad;
+        _enfermedades = List<String>.from(enfermedades);
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveProfileData() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(_profileNameKey, _nombres);
+      await sp.setString(_profileLastKey, _apellidos);
+      await sp.setString(_profileAgeKey, _edad);
+      await sp.setStringList(_profileDiseasesKey, _enfermedades);
+    } catch (_) {}
+  }
+
+  Future<void> _loadProfilePhoto() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final String? b64 = sp.getString(_profilePhotoKey);
+      if (b64 != null && mounted) {
+        setState(() {
+          _profilePhoto = base64Decode(b64);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveProfilePhoto(Uint8List bytes) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(_profilePhotoKey, base64Encode(bytes));
+      if (mounted) setState(() { _profilePhoto = bytes; });
+    } catch (_) {}
+  }
+
+  // Privacy persistence removed; replaced by an expandable info panel.
 
   Future<void> _loadContacts() async {
     try {
@@ -222,14 +286,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
     );
   }
 
-  Future<void> _toggleAutoCall(bool value) async {
-    setState(() => _autoCall = value);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(
-        value ? 'Llamada automática activada' : 'Llamada automática desactivada'
-      )),
-    );
-  }
 
   void _showEditProfileDialog() {
     final nombresController = TextEditingController(text: _nombres);
@@ -240,6 +296,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
     showDialog(
       context: context,
       builder: (context) {
+        Uint8List? previewBytes = _profilePhoto;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
@@ -249,6 +306,28 @@ class _SenttingsPageState extends State<SenttingsPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Colors.pink.shade50,
+                          backgroundImage: previewBytes != null ? MemoryImage(previewBytes!) : null,
+                          child: previewBytes == null ? const Icon(Icons.person, color: Colors.pink, size: 36) : null,
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final XFile? file = await openFile(acceptedTypeGroups: [XTypeGroup(label: 'images', extensions: ['jpg', 'jpeg', 'png'])]);
+                            if (file != null) {
+                              final bytes = await file.readAsBytes();
+                              setDialogState(() { previewBytes = bytes; });
+                            }
+                          },
+                          child: const Text('Seleccionar foto'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     TextField(
                       decoration: const InputDecoration(labelText: 'Nombres'),
                       controller: nombresController,
@@ -283,38 +362,48 @@ class _SenttingsPageState extends State<SenttingsPage> {
                   ],
                 ),
               ),
-              actions: [
+                actions: [
                 TextButton(
                   child: const Text('Cerrar'),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 ElevatedButton(
                   child: const Text('Guardar'),
-                  onPressed: () {
+                  onPressed: () async {
                     final nombres = nombresController.text.trim();
                     final apellidos = apellidosController.text.trim();
                     final edad = edadController.text.trim();
+                    final navigator = Navigator.of(context);
 
                     if (!_esNombreValido(nombres) || !_esNombreValido(apellidos)) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Nombres y apellidos no pueden estar vacíos y solo deben contener letras y espacios.'))
+                        const SnackBar(content: Text('Nombres y apellidos no pueden estar vacíos y solo deben contener letras y espacios.'))
                       );
                       return;
                     }
                     if (!_esEdadValida(edad)) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edad inválida, debe ser un número entre 1 y 120.'))
+                        const SnackBar(content: Text('Edad inválida, debe ser un número entre 1 y 120.'))
                       );
                       return;
                     }
 
+                    // Save profile photo if selected
+                    if (previewBytes != null) {
+                      await _saveProfilePhoto(previewBytes!);
+                    }
+
+                    if (!mounted) return;
                     setState(() {
                       _nombres = nombres;
                       _apellidos = apellidos;
                       _edad = edad;
                       _enfermedades = enfermedadesSeleccionadas;
                     });
-                    Navigator.of(context).pop();
+
+                    // Persist profile data
+                    await _saveProfileData();
+                    navigator.pop();
                   },
                 ),
               ],
@@ -350,14 +439,16 @@ class _SenttingsPageState extends State<SenttingsPage> {
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 leading: CircleAvatar(
-                  radius: 24,
+                  radius: 32,
                   backgroundColor: Colors.pink.shade50,
-                  child: const Icon(Icons.person, color: Colors.pink),
+                  backgroundImage: _profilePhoto != null ? MemoryImage(_profilePhoto!) : null,
+                  child: _profilePhoto == null ? const Icon(Icons.person, color: Colors.pink, size: 28) : null,
                 ),
                 title: const Text('Perfil personal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                subtitle: Text(_nombres.isEmpty && _apellidos.isEmpty && _edad.isEmpty && _enfermedades.isEmpty
-                  ? 'Editar información médica'
-                  : 'Nombre: $_nombres\nApellido: $_apellidos\nEdad: $_edad\nEnfermedades: ${_enfermedades.join(", ")}',
+                subtitle: Text(
+                  _nombres.isEmpty && _apellidos.isEmpty && _edad.isEmpty && _enfermedades.isEmpty
+                    ? 'Editar información médica'
+                    : 'Nombre: $_nombres\nApellido: $_apellidos\nEdad: $_edad\nEnfermedades: ${_enfermedades.join(", ")}',
                   style: const TextStyle(fontSize: 13),
                 ),
                 trailing: TextButton(
@@ -401,18 +492,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                     value: _location,
                     onChanged: _toggleLocation,
                   ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    secondary: CircleAvatar(
-                      backgroundColor: Colors.green.shade50,
-                      child: const Icon(Icons.call, color: Colors.green),
-                    ),
-                    title: const Text('Llamada automática', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Llamar al activar pánico', style: TextStyle(fontSize: 13)),
-                    value: _autoCall,
-                    onChanged: _toggleAutoCall,
-                  ),
+                  // 'Llamada automática' removed per user request
                 ],
               ),
             ),
@@ -515,18 +595,24 @@ class _SenttingsPageState extends State<SenttingsPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: <Widget>[
-                  ListTile(
-                    leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.lock, color: Colors.black54)),
-                    title: const Text('Cambiar PIN', style: TextStyle(fontWeight: FontWeight.w600)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
+                  
+                  ExpansionTile(
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 16),
                     leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.shield, color: Colors.black54)),
                     title: const Text('Privacidad', style: TextStyle(fontWeight: FontWeight.w600)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                    subtitle: const Text('Toque para más información', style: TextStyle(fontSize: 13)),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                        child: Text(
+                          'Tus datos son tratados únicamente para mejorar el servicio y activar funciones de emergencia. '
+                          'No se venden ni se usan para fines comerciales externos, publicidad dirigida ni negocios no autorizados. '
+                          'Los datos personales sensibles se mantienen en el dispositivo y sólo se comparten con los contactos que tú configures.',
+                          textAlign: TextAlign.justify,
+                          style: TextStyle(fontSize: 15, height: 1.5, color: const Color.fromARGB(255, 0, 0, 0)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

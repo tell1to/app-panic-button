@@ -38,7 +38,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         if (next != null) _nextId = next;
       }
     } catch (e) {
-      // ignore
+      debugPrint('Error loading documents: $e');
     }
   }
 
@@ -48,7 +48,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       await prefs.setString('documents', jsonEncode(_docs));
       await prefs.setInt('documentsNextId', _nextId);
     } catch (e) {
-      // ignore
+      debugPrint('Error saving documents: $e');
     }
   }
 
@@ -63,7 +63,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       final targetDir = Directory('${appDir.path}/documents');
       if (!await targetDir.exists()) await targetDir.create(recursive: true);
 
-      final targetPath = '${targetDir.path}/${DateTime.now().millisecondsSinceEpoch}_${fileName}';
+      final targetPath = '${targetDir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileName';
       final f = File(targetPath);
       await f.writeAsBytes(bytes);
       final stat = await f.length();
@@ -96,7 +96,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         if (await file.exists()) await file.delete();
       }
     } catch (e) {
-      // ignore
+      debugPrint('Error deleting document: $e');
     }
     setState(() => _docs.removeAt(index));
     await _saveDocs();
@@ -164,7 +164,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                             ? Center(child: Text('No hay documentos guardados', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)))
                             : ListView.separated(
                                 itemCount: _docs.length,
-                                separatorBuilder: (_, __) => const Divider(height: 16),
+                                separatorBuilder: (context, index) => const Divider(height: 16),
                                 itemBuilder: (context, i) {
                                   final d = _docs[i];
                                   final created = d['created'] as String?;
@@ -174,24 +174,28 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                       final dt = DateTime.parse(created);
                                       dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
                                     }
-                                  } catch (e) {}
+                                  } catch (e) {
+                                    debugPrint('Error parsing document date: $e');
+                                  }
                                   final sizeKb = ((d['size'] as int?) ?? 0) ~/ 1024;
                                   return ListTile(
                                     contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                                     leading: CircleAvatar(
                                       radius: 22,
-                                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                                      backgroundColor: Theme.of(context).colorScheme.primary.withAlpha((0.12 * 255).round()),
                                       child: Icon(Icons.insert_drive_file_outlined, color: Theme.of(context).colorScheme.primary),
                                     ),
                                     title: Text(d['name'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                    subtitle: Text(dateStr.isNotEmpty ? 'Fecha: $dateStr · Tamaño: ${sizeKb} KB' : 'Tamaño: ${sizeKb} KB', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+                                    subtitle: Text(dateStr.isNotEmpty ? 'Fecha: $dateStr · Tamaño: $sizeKb KB' : 'Tamaño: $sizeKb KB', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
                                     trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _deleteDoc(i)),
                                     onTap: () async {
                                       final path = d['path'] as String?;
                                       if (path != null) {
                                         try {
                                           await File(path).exists();
-                                        } catch (e) {}
+                                        } catch (e) {
+                                          debugPrint('Error checking document file: $e');
+                                        }
                                       }
                                     },
                                   );
