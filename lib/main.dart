@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'options.dart';
 import 'senttings.dart';
 import 'preferences.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// shared_preferences no es necesario aquí; la preferencia global se gestiona en preferences.dart
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -96,21 +97,22 @@ class _InicioPageState extends State<InicioPage> {
   // Which of the two small buttons on Inicio is set as favorite: 0 = 911, 1 = contacto
   int _mainFavoriteIndex = 0;
   static const String _mainFavoriteKey = 'main_favorite_index';
+  // Preferred contact is managed from Settings (preferredContact ValueNotifier).
   late VoidCallback _preferredListener;
 
   Future<void> _callNumber(BuildContext context, String number) async {
     final String normalized = _normalizePhone(number);
     final Uri uri = Uri(scheme: 'tel', path: normalized);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      if (!await launchUrl(uri)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo iniciar la llamada')),
-        );
+      final ok = await launchUrl(uri);
+      if (!mounted) return;
+      if (!ok) {
+        messenger.showSnackBar(const SnackBar(content: Text('No se pudo iniciar la llamada')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -151,13 +153,12 @@ class _InicioPageState extends State<InicioPage> {
       final dyn = optionsPageKey.currentState as dynamic;
       dyn?.addAlert(datetime: DateTime.now(), location: '', description: 'Alerta activada desde botón de pánico', status: 'Alerta');
     } catch (_) {}
-    // Decide which of the two main buttons is marked as favorite and call that.
+    // Decide based on which small button is selected
     String numberToCall = '911';
     if (_mainFavoriteIndex == 1) {
       if (_preferredContact != null && (_preferredContact!['telefono']?.isNotEmpty ?? false)) {
         numberToCall = _preferredContact!['telefono']!;
       } else {
-        // Fallback to 911 if Settings has no preferred contact
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));
         numberToCall = '911';
       }
@@ -180,18 +181,7 @@ class _InicioPageState extends State<InicioPage> {
     super.dispose();
   }
 
-  Future<void> _setMainFavorite(int index) async {
-    setState(() {
-      _mainFavoriteIndex = index;
-    });
-    // persist selection
-    try {
-      final sp = await SharedPreferences.getInstance();
-      await sp.setInt(_mainFavoriteKey, index);
-    } catch (_) {}
-    final label = index == 0 ? '911' : (_preferredContact?['nombre'] ?? 'Contacto');
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Botón favorito: $label')));
-  }
+  // No _setMainFavorite: favorite is set from Settings only.
 
   // Preferred is now managed globally from Settings via `preferredContactNumber`.
   @override
@@ -202,6 +192,12 @@ class _InicioPageState extends State<InicioPage> {
       if (!mounted) return;
       setState(() {
         _preferredContact = preferredContact.value;
+        // If no preferred contact exists but the main favorite index points to it, reset to 0 (911)
+        if (_preferredContact == null && _mainFavoriteIndex == 1) {
+          _mainFavoriteIndex = 0;
+          // persist fallback
+          SharedPreferences.getInstance().then((sp) => sp.setInt(_mainFavoriteKey, 0));
+        }
       });
     };
     preferredContact.addListener(_preferredListener);
@@ -216,6 +212,22 @@ class _InicioPageState extends State<InicioPage> {
         });
       }
     });
+    // No persisted main favorite index: the preferred contact from Settings
+    // determines which contact will be called when appropriate.
+  }
+
+  Future<void> _setMainFavorite(int index) async {
+    setState(() {
+      _mainFavoriteIndex = index;
+    });
+    // persist selection
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setInt(_mainFavoriteKey, index);
+    } catch (_) {}
+    final label = index == 0 ? '911' : (_preferredContact?['nombre'] ?? 'Contacto');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Botón seleccionado: $label')));
   }
 
   @override
@@ -249,7 +261,7 @@ class _InicioPageState extends State<InicioPage> {
                   children: <Widget>[
               Row(
                 children: <Widget>[
-                  const CircleAvatar(child: Icon(Icons.person, color: Colors.white), backgroundColor: Colors.pink, radius: 22),
+                  const CircleAvatar(backgroundColor: Colors.pink, radius: 22, child: Icon(Icons.person, color: Colors.white)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -326,7 +338,7 @@ class _InicioPageState extends State<InicioPage> {
                       decoration: BoxDecoration(
                         color: const Color.fromARGB(255, 240, 35, 20),
                         shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.45), blurRadius: 18, spreadRadius: 4)],
+                        boxShadow: [BoxShadow(color: Colors.red.withAlpha((0.45 * 255).round()), blurRadius: 18, spreadRadius: 4)],
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -337,7 +349,7 @@ class _InicioPageState extends State<InicioPage> {
                             child: CircularProgressIndicator(
                               value: _holdProgress,
                               strokeWidth: (emergencyDiameter * 0.032).clamp(6.0, 12.0),
-                              color: Colors.white.withOpacity(0.95),
+                              color: Colors.white.withAlpha((0.95 * 255).round()),
                               backgroundColor: Colors.white24,
                             ),
                           ),
@@ -422,7 +434,7 @@ class _InicioPageState extends State<InicioPage> {
                               clipBehavior: Clip.none,
                               children: [
                                 ElevatedButton(
-                                  onPressed: () => _setMainFavorite(1),
+                                  onPressed: _preferredContact == null ? null : () => _setMainFavorite(1),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: _mainFavoriteIndex == 1 ? Colors.orange : (_preferredContact == null ? Colors.grey : Colors.green),
                                     minimumSize: Size(0, buttonHeight),
@@ -440,7 +452,7 @@ class _InicioPageState extends State<InicioPage> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
-                                              _preferredContact?['nombre'] ?? 'Contacto',
+                                              _preferredContact?['nombre'] ?? 'Sin contacto',
                                               textAlign: TextAlign.center,
                                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                               maxLines: 1,
@@ -460,7 +472,7 @@ class _InicioPageState extends State<InicioPage> {
                                     ],
                                   ),
                                 ),
-                                if (_mainFavoriteIndex == 1)
+                                if (_mainFavoriteIndex == 1 && _preferredContact != null)
                                   Positioned(
                                     top: 6,
                                     right: 6,

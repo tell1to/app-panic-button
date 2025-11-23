@@ -79,9 +79,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
       });
 
       await _saveDocs();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Documento subido correctamente')));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al subir el documento')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al subir el documento')));
+      }
     }
   }
 

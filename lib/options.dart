@@ -112,6 +112,7 @@ class _OptionsPageState extends State<OptionsPage> {
       } catch (e) {
         // ignore errors opening settings
       }
+      if (!mounted) return;
       // Inform the user to try again after enabling permission
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Abriendo ajustes. Vuelve a intentar la alerta después de habilitar el permiso.')));
     }
@@ -329,6 +330,7 @@ class _OptionsPageState extends State<OptionsPage> {
     if (title == 'Condición médica') {
       final result = await _showConditionDialog(context, initialDiagnosis: _conditionDiagnosis, initialSince: _conditionSince);
       if (result != null) {
+        if (!mounted) return;
         setState(() {
           _conditionDiagnosis = result['diagnosis'];
           _conditionSince = result['since'];
@@ -528,6 +530,7 @@ class _OptionsPageState extends State<OptionsPage> {
                       );
 
                       if (result != null) {
+                        if (!mounted) return;
                         final name = result['name'] ?? '';
                         final qty = result['qty'] ?? '';
                         final freq = result['freq'] ?? '';
@@ -640,6 +643,7 @@ class _OptionsPageState extends State<OptionsPage> {
                                 },
                               );
                               if (result != null) {
+                                if (!mounted) return;
                                 setState(() {
                                   _appointments[i] = result;
                                 });
@@ -707,6 +711,7 @@ class _OptionsPageState extends State<OptionsPage> {
                         },
                       );
                       if (result != null) {
+                        if (!mounted) return;
                         setState(() => _appointments.add(result));
                         this.setState(() {});
                         await _saveAppointments();
@@ -763,6 +768,7 @@ class _OptionsPageState extends State<OptionsPage> {
                                   onPressed: () async {
                                       final result = await _showAlertDetailDialog(context, _alerts[i]);
                                       if (result != null) {
+                                        if (!mounted) return;
                                         setState(() => _alerts[i] = result);
                                         await _saveAlerts();
                                       }
@@ -879,7 +885,7 @@ class _OptionsPageState extends State<OptionsPage> {
     if (status == 'Alerta') color = Colors.red;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: color.withAlpha((0.15 * 255).round()), borderRadius: BorderRadius.circular(20)),
       child: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
     );
   }
@@ -960,6 +966,7 @@ class _OptionsPageState extends State<OptionsPage> {
                         },
                       );
                       if (result != null && result.isNotEmpty) {
+                        if (!mounted) return;
                         setState(() => _allergies.add(result));
                         this.setState(() {});
                         await _saveAllergies();
@@ -1020,6 +1027,7 @@ class _OptionsPageState extends State<OptionsPage> {
     );
 
     if (result == true) {
+        if (!mounted) return;
       setState(() {
         _insuranceCompany = companyCtrl.text.trim();
         _policyNumber = policyCtrl.text.trim();
@@ -1195,7 +1203,7 @@ class _OptionsPageState extends State<OptionsPage> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
+            color: color.withAlpha((0.12 * 255).round()),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color),

@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'preferences.dart';
 
 class SenttingsPage extends StatefulWidget {
@@ -24,10 +29,40 @@ class _SenttingsPageState extends State<SenttingsPage> {
   ];
 
   // Contactos
-  List<Map<String, String>> _contactos = [
-    {'nombre': 'Contacto 1', 'telefono': '+1 234 567 890'},
-    {'nombre': 'Contacto 2', 'telefono': '+1 234 567 891'},
-  ];
+  List<Map<String, String>> _contactos = [];
+
+  static const String _contactsKey = 'user_contacts';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getStringList(_contactsKey);
+      if (raw != null) {
+        final loaded = raw.map((s) {
+          final Map<String, dynamic> m = jsonDecode(s) as Map<String, dynamic>;
+          return m.map((k, v) => MapEntry(k, v.toString()));
+        }).toList();
+        if (!mounted) return;
+        setState(() {
+          _contactos = List<Map<String, String>>.from(loaded);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveContacts() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = _contactos.map((m) => jsonEncode(m)).toList();
+      await sp.setStringList(_contactsKey, raw);
+    } catch (_) {}
+  }
 
   // --- VALIDACIONES ---
   bool _esNombreValido(String nombre) {
@@ -35,7 +70,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
   }
 
   bool _esTelefonoValido(String telefono) {
-    return RegExp(r'^\+?\d{8,}$').hasMatch(telefono);
+    // Accept only 10 digits, no spaces
+    return RegExp(r'^\d{10}$').hasMatch(telefono);
   }
 
   bool _esEdadValida(String edad) {
@@ -45,8 +81,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
 
   // --- Contactos ---
   void _showContactoDialog({int? index}) {
-    String initialNombre = index != null ? _contactos[index]['nombre'] ?? '' : '';
-    String initialTelefono = index != null ? _contactos[index]['telefono'] ?? '' : '';
+    final String initialNombre = index != null ? _contactos[index]['nombre'] ?? '' : '';
+    final String initialTelefono = index != null ? _contactos[index]['telefono'] ?? '' : '';
 
     final nombreController = TextEditingController(text: initialNombre);
     final telefonoController = TextEditingController(text: initialTelefono);
@@ -63,6 +99,9 @@ class _SenttingsPageState extends State<SenttingsPage> {
                 TextField(
                   decoration: const InputDecoration(labelText: 'Nombre del responsable'),
                   controller: nombreController,
+                  maxLength: 50,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  inputFormatters: [LengthLimitingTextInputFormatter(50)],
                 ),
                 TextField(
                   decoration: const InputDecoration(labelText: 'Número de teléfono'),
@@ -79,30 +118,52 @@ class _SenttingsPageState extends State<SenttingsPage> {
             ),
             ElevatedButton(
               child: const Text('Guardar'),
-              onPressed: () {
+              onPressed: () async {
                 final nombre = nombreController.text.trim();
                 final telefono = telefonoController.text.trim();
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
 
                 if (!_esNombreValido(nombre)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('El nombre no puede estar vacío y solo debe contener letras y espacios.'))
-                  );
+                  messenger.showSnackBar(const SnackBar(content: Text('El nombre no puede estar vacío y solo debe contener letras y espacios.')));
+                  return;
+                }
+                if (nombre.length > 50) {
+                  messenger.showSnackBar(const SnackBar(content: Text('El nombre no puede exceder 50 caracteres.')));
                   return;
                 }
                 if (!_esTelefonoValido(telefono)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Teléfono inválido. Debe ser numérico y tener al menos 8 dígitos.'))
-                  );
+                  messenger.showSnackBar(const SnackBar(content: Text('Teléfono inválido. Use 10 dígitos sin espacios (ej: 9123456789).')));
                   return;
                 }
-                setState(() {
-                  if (index == null) {
-                    _contactos.add({'nombre': nombre, 'telefono': telefono});
-                  } else {
-                    _contactos[index] = {'nombre': nombre, 'telefono': telefono};
-                  }
-                });
-                Navigator.of(context).pop();
+
+                String? previousPhone;
+                if (index == null) {
+                  _contactos.add({'nombre': nombre, 'telefono': telefono});
+                } else {
+                  previousPhone = _contactos[index]['telefono'];
+                  _contactos[index] = {'nombre': nombre, 'telefono': telefono};
+                }
+
+                await _saveContacts();
+
+                // If this is the first contact added, mark it as preferred and select it for main button
+                if (index == null && _contactos.length == 1) {
+                  await setPreferredContact({'nombre': nombre, 'telefono': telefono});
+                  try {
+                    final sp = await SharedPreferences.getInstance();
+                    await sp.setInt('main_favorite_index', 1);
+                  } catch (_) {}
+                }
+
+                // If we edited a contact that was previously the preferred, update the preferred info
+                if (index != null && previousPhone != null && preferredContact.value != null && preferredContact.value!['telefono'] == previousPhone) {
+                  await setPreferredContact({'nombre': nombre, 'telefono': telefono});
+                }
+
+                if (!mounted) return;
+                setState(() {});
+                navigator.pop();
               },
             ),
           ],
@@ -125,15 +186,16 @@ class _SenttingsPageState extends State<SenttingsPage> {
           ElevatedButton(
             child: const Text('Eliminar'),
             onPressed: () async {
-              setState(() {
-                final removed = _contactos.removeAt(index);
-                final removedPhone = removed['telefono'];
-                if (preferredContact.value != null && preferredContact.value!['telefono'] == removedPhone) {
-                  // clear persisted favorite as well
-                  setPreferredContact(null);
-                }
-              });
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              final removed = _contactos.removeAt(index);
+              final removedPhone = removed['telefono'];
+              await _saveContacts();
+              if (preferredContact.value != null && preferredContact.value!['telefono'] == removedPhone) {
+                await setPreferredContact(null);
+              }
+              if (!mounted) return;
+              setState(() {});
+              navigator.pop();
             },
           ),
         ],
@@ -217,7 +279,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                           });
                         },
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -392,13 +454,15 @@ class _SenttingsPageState extends State<SenttingsPage> {
                                     icon: Icon(isFav ? Icons.star : Icons.star_border),
                                     color: isFav ? Colors.amber : Colors.grey,
                                     onPressed: () async {
+                                      final messenger = ScaffoldMessenger.of(context);
                                       if (isFav) {
                                         await setPreferredContact(null);
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contacto favorito removido')));
+                                        messenger.showSnackBar(const SnackBar(content: Text('Contacto favorito removido')));
                                       } else {
                                         await setPreferredContact({'nombre': contacto['nombre'] ?? '', 'telefono': contacto['telefono'] ?? ''});
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contacto marcado como favorito')));
+                                        messenger.showSnackBar(const SnackBar(content: Text('Contacto marcado como favorito')));
                                       }
+                                      if (!mounted) return;
                                       setState(() {});
                                     },
                                   );
