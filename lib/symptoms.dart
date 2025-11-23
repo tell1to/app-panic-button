@@ -10,9 +10,9 @@ class SymptomsPage extends StatefulWidget {
 }
 
 class _SymptomsPageState extends State<SymptomsPage> {
-  DateTime _selectedDate = DateTime.now();
+  
   final TextEditingController _symptomsCtrl = TextEditingController();
-  double _severity = 5.0;
+  
 
   List<Map<String, dynamic>> _entries = [];
   int _nextId = 1;
@@ -38,7 +38,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
         if (next != null) _nextId = next;
       }
     } catch (e) {
-      // ignore
+      debugPrint('Error loading symptoms: $e');
     }
   }
 
@@ -48,40 +48,11 @@ class _SymptomsPageState extends State<SymptomsPage> {
       await prefs.setString('symptoms', jsonEncode(_entries));
       await prefs.setInt('symptomsNextId', _nextId);
     } catch (e) {
-      // ignore
+      debugPrint('Error saving symptoms: $e');
     }
   }
 
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) setState(() => _selectedDate = picked);
-  }
-
-  void _addEntry() async {
-    final text = _symptomsCtrl.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Describe los síntomas antes de guardar.')));
-      return;
-    }
-    final entry = {
-      'id': _nextId++,
-      'date': _selectedDate.toIso8601String(),
-      'symptoms': text,
-      'severity': _severity.round(),
-    };
-    setState(() {
-      _entries.insert(0, entry);
-      _symptomsCtrl.clear();
-      _selectedDate = DateTime.now();
-      _severity = 5.0;
-    });
-    await _saveEntries();
-  }
+  // removed unused _pickDate
 
   void _deleteEntry(int index) async {
     setState(() => _entries.removeAt(index));
@@ -124,7 +95,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6)],
+                boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.03 * 255).round()), blurRadius: 6)],
               ),
               child: Row(
                 children: [
@@ -180,7 +151,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(color: _severityColor(e['severity'] as int).withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                                      decoration: BoxDecoration(color: _severityColor(e['severity'] as int).withAlpha((0.12 * 255).round()), borderRadius: BorderRadius.circular(6)),
                                       child: Text('Sev ${e['severity']}', style: TextStyle(color: _severityColor(e['severity'] as int), fontWeight: FontWeight.w700, fontSize: 12)),
                                     )
                                   ],
@@ -277,8 +248,9 @@ class _SymptomsPageState extends State<SymptomsPage> {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Describe los síntomas antes de guardar.')));
                     return;
                   }
+                  final navigator = Navigator.of(ctx);
                   await _insertEntry(chosen, text, sev.round());
-                  if (mounted) Navigator.of(ctx).pop();
+                  navigator.pop();
                 },
                 child: const Text('Guardar')
               )
@@ -346,8 +318,9 @@ class _SymptomsPageState extends State<SymptomsPage> {
                       'severity': sev.round(),
                     };
                   });
+                  final navigator = Navigator.of(ctx);
                   await _saveEntries();
-                  if (mounted) Navigator.of(ctx).pop();
+                  navigator.pop();
                 },
                 child: const Text('Guardar')
               )
