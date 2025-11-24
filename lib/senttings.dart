@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:async'; // A veces necesario para Uint8List dependiendo de la versión, pero base64Decode lo usa de dart:convert
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:url_launcher/url_launcher.dart'; // Si lo usas, aunque en este archivo no parece necesario, lo dejo por si acaso.
 
-import 'preferences.dart';
+// Asegúrate de que este archivo exista y tenga 'preferredContact' y 'setPreferredContact'
+import 'preferences.dart'; 
 
 class SenttingsPage extends StatefulWidget {
   const SenttingsPage({super.key});
@@ -17,7 +20,6 @@ class SenttingsPage extends StatefulWidget {
 class _SenttingsPageState extends State<SenttingsPage> {
   bool _notifications = true;
   bool _location = true;
-  // removed automatic call toggle per request
 
   // Profile photo bytes (persisted as base64)
   Uint8List? _profilePhoto;
@@ -28,8 +30,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
   static const String _profileLastKey = 'profile_apellidos';
   static const String _profileAgeKey = 'profile_edad';
   static const String _profileDiseasesKey = 'profile_enfermedades';
-
-  // Privacy explanatory text (no persistent toggle)
 
   // Variables del perfil
   String _nombres = "";
@@ -100,8 +100,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
       if (mounted) setState(() { _profilePhoto = bytes; });
     } catch (_) {}
   }
-
-  // Privacy persistence removed; replaced by an expandable info panel.
 
   Future<void> _loadContacts() async {
     try {
@@ -362,7 +360,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                   ],
                 ),
               ),
-                actions: [
+              actions: [
                 TextButton(
                   child: const Text('Cerrar'),
                   onPressed: () => Navigator.of(context).pop(),
@@ -416,6 +414,11 @@ class _SenttingsPageState extends State<SenttingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Compute responsive font sizes based on device width
+    final double deviceWidth = MediaQuery.of(context).size.width;
+    final double nameFontSize = (deviceWidth * 0.045).clamp(14.0, 18.0) as double;
+    final double phoneFontSize = (deviceWidth * 0.035).clamp(12.0, 14.0) as double;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF5F6),
       appBar: AppBar(
@@ -492,7 +495,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
                     value: _location,
                     onChanged: _toggleLocation,
                   ),
-                  // 'Llamada automática' removed per user request
                 ],
               ),
             ),
@@ -504,6 +506,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
               child: Text('Contactos', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             ),
 
+            // === AQUI ESTA EL CAMBIO RESPONSIVE ===
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
@@ -519,9 +522,20 @@ class _SenttingsPageState extends State<SenttingsPage> {
                             backgroundColor: idx % 2 == 0 ? Colors.blue.shade50 : Colors.green.shade50,
                             child: const Icon(Icons.phone, color: Colors.blue),
                           ),
-                          title: Text(contacto['nombre'] ?? '',
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: Text(contacto['telefono'] ?? '', style: const TextStyle(fontSize: 13)),
+                          // Cambiado para responsive: sin maxLines, softWrap true
+                          title: Text(
+                            contacto['nombre'] ?? '',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: nameFontSize),
+                            softWrap: true,
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              contacto['telefono'] ?? '',
+                              style: TextStyle(fontSize: phoneFontSize),
+                              softWrap: true,
+                            ),
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -531,7 +545,9 @@ class _SenttingsPageState extends State<SenttingsPage> {
                                 builder: (context, fav, _) {
                                   final bool isFav = fav != null && fav['telefono'] == (contacto['telefono'] ?? '');
                                   return IconButton(
-                                    icon: Icon(isFav ? Icons.star : Icons.star_border),
+                                    constraints: const BoxConstraints(), // Reduce area extra
+                                    padding: const EdgeInsets.all(8),
+                                    icon: Icon(isFav ? Icons.star : Icons.star_border, size: 22),
                                     color: isFav ? Colors.amber : Colors.grey,
                                     onPressed: () async {
                                       final messenger = ScaffoldMessenger.of(context);
@@ -550,10 +566,17 @@ class _SenttingsPageState extends State<SenttingsPage> {
                               ),
                               TextButton(
                                 onPressed: () => _showContactoDialog(index: idx),
-                                child: const Text('Editar', style: TextStyle(color: Colors.red)),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  minimumSize: const Size(0, 0),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text('Editar', style: TextStyle(color: Colors.red, fontSize: 13)),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline),
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.all(8),
+                                icon: const Icon(Icons.delete_outline, size: 22),
                                 color: Colors.grey,
                                 onPressed: () => _showDeleteConfirmDialog(idx),
                               ),
@@ -583,6 +606,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                 ],
               ),
             ),
+            // === FIN DEL CAMBIO RESPONSIVE ===
 
             const SizedBox(height: 18),
 
@@ -595,7 +619,6 @@ class _SenttingsPageState extends State<SenttingsPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: <Widget>[
-                  
                   ExpansionTile(
                     tilePadding: const EdgeInsets.symmetric(horizontal: 16),
                     leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.shield, color: Colors.black54)),
@@ -636,5 +659,3 @@ class _SenttingsPageState extends State<SenttingsPage> {
     );
   }
 }
-
-
