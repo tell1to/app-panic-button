@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 import 'options.dart';
 import 'senttings.dart';
 import 'preferences.dart';
-// shared_preferences no es necesario aquí; la preferencia global se gestiona en preferences.dart
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -99,6 +100,11 @@ class _InicioPageState extends State<InicioPage> {
   static const String _mainFavoriteKey = 'main_favorite_index';
   // Preferred contact is managed from Settings (preferredContact ValueNotifier).
   late VoidCallback _preferredListener;
+  
+  // Variables para ubicación
+  String _ciudad = 'Obteniendo...';
+  String _pais = '';
+  bool _ubicacionCargando = true;
 
   Future<void> _callNumber(BuildContext context, String number) async {
     final String normalized = _normalizePhone(number);
@@ -171,6 +177,75 @@ class _InicioPageState extends State<InicioPage> {
     });
   }
 
+  // Nueva función para obtener ubicación
+  Future<void> _obtenerUbicacion() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() {
+            _ciudad = 'Servicio deshabilitado';
+            _pais = '';
+            _ubicacionCargando = false;
+          });
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() {
+              _ciudad = 'Permiso denegado';
+              _pais = '';
+              _ubicacionCargando = false;
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() {
+            _ciudad = 'Sin permisos';
+            _pais = '';
+            _ubicacionCargando = false;
+          });
+        }
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty && mounted) {
+        Placemark place = placemarks[0];
+        setState(() {
+          _ciudad = place.locality ?? place.subAdministrativeArea ?? 'Desconocida';
+          _pais = place.country ?? '';
+          _ubicacionCargando = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _ciudad = 'Error de ubicación';
+          _pais = '';
+          _ubicacionCargando = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     // remove notifier listener to avoid calling setState after dispose
@@ -187,6 +262,10 @@ class _InicioPageState extends State<InicioPage> {
   @override
   void initState() {
     super.initState();
+    
+    // Obtener ubicación al iniciar
+    _obtenerUbicacion();
+    
     // Listen to global preferred contact from Settings
     _preferredListener = () {
       if (!mounted) return;
@@ -259,116 +338,145 @@ class _InicioPageState extends State<InicioPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-              Row(
-                children: <Widget>[
-                  const CircleAvatar(backgroundColor: Colors.pink, radius: 22, child: Icon(Icons.person, color: Colors.white)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const <Widget>[
-                        Text('Bienvenido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Sistema de emergencia activo', style: TextStyle(color: Colors.black54)),
+                    Row(
+                      children: <Widget>[
+                        const CircleAvatar(backgroundColor: Colors.pink, radius: 22, child: Icon(Icons.person, color: Colors.white)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const <Widget>[
+                              Text('Bienvenido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              Text('Sistema de emergencia activo', style: TextStyle(color: Colors.black54)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Expanded(
-                    child: SizedBox(
-                      height: cardHeight,
-                      child: Card(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(Icons.contacts, color: Colors.purple, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
-                              const SizedBox(height: 8),
-                              Text('Contactos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text('2 Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: cardHeight,
-                      child: Card(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(Icons.location_on, color: Colors.blue, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
-                              const SizedBox(height: 8),
-                              Text('Ubicación', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text('Activa', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: emergencyDiameter + 40,
-                child: Align(
-                  alignment: const Alignment(0, 0.46),
-                  child: Listener(
-                    onPointerDown: (_) => _startHold(),
-                    onPointerUp: (_) => _cancelHold(),
-                    onPointerCancel: (_) => _cancelHold(),
-                    child: Container(
-                      width: emergencyDiameter,
-                      height: emergencyDiameter,
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 240, 35, 20),
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.red.withAlpha((0.45 * 255).round()), blurRadius: 18, spreadRadius: 4)],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: <Widget>[
-                          SizedBox(
-                            width: progressDiameter,
-                            height: progressDiameter,
-                            child: CircularProgressIndicator(
-                              value: _holdProgress,
-                              strokeWidth: (emergencyDiameter * 0.032).clamp(6.0, 12.0),
-                              color: Colors.white.withAlpha((0.95 * 255).round()),
-                              backgroundColor: Colors.white24,
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Expanded(
+                          child: SizedBox(
+                            height: cardHeight,
+                            child: Card(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: <Widget>[
+                                    Icon(Icons.contacts, color: Colors.purple, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
+                                    const SizedBox(height: 8),
+                                    Text('Contactos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text('2 Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Icon(Icons.warning, size: (emergencyDiameter * 0.18).clamp(40.0, 80.0), color: Colors.white),
-                              const SizedBox(height: 12),
-                              Text('EMERGENCIA', style: TextStyle(color: Colors.white, fontSize: (emergencyDiameter * 0.06).clamp(16.0, 22.0), fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 6),
-                              Text('Mantén presionado para activar', style: TextStyle(color: Colors.white70, fontSize: (emergencyDiameter * 0.035).clamp(12.0, 16.0))),
-                            ],
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: cardHeight,
+                            child: Card(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: <Widget>[
+                                    Icon(Icons.location_on, color: Colors.blue, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Ubicación',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: (cardHeight * 0.12).clamp(14.0, 16.0),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // Aquí mostramos la ubicación real en una sola línea
+                                    _ubicacionCargando
+                                        ? SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                            ),
+                                          )
+                                        : Text(
+                                            _pais.isNotEmpty ? '$_ciudad, $_pais' : _ciudad,
+                                            style: TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: (cardHeight * 0.1).clamp(11.0, 13.0),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                          ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: emergencyDiameter + 40,
+                      child: Align(
+                        alignment: const Alignment(0, 0.46),
+                        child: Listener(
+                          onPointerDown: (_) => _startHold(),
+                          onPointerUp: (_) => _cancelHold(),
+                          onPointerCancel: (_) => _cancelHold(),
+                          child: Container(
+                            width: emergencyDiameter,
+                            height: emergencyDiameter,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 240, 35, 20),
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(color: Colors.red.withAlpha((0.45 * 255).round()), blurRadius: 18, spreadRadius: 4)],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: <Widget>[
+                                SizedBox(
+                                  width: progressDiameter,
+                                  height: progressDiameter,
+                                  child: CircularProgressIndicator(
+                                    value: _holdProgress,
+                                    strokeWidth: (emergencyDiameter * 0.032).clamp(6.0, 12.0),
+                                    color: Colors.white.withAlpha((0.95 * 255).round()),
+                                    backgroundColor: Colors.white24,
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Icon(Icons.warning, size: (emergencyDiameter * 0.18).clamp(40.0, 80.0), color: Colors.white),
+                                    const SizedBox(height: 12),
+                                    Text('EMERGENCIA', style: TextStyle(color: Colors.white, fontSize: (emergencyDiameter * 0.06).clamp(16.0, 22.0), fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 6),
+                                    Text('Mantén presionado para activar', style: TextStyle(color: Colors.white70, fontSize: (emergencyDiameter * 0.035).clamp(12.0, 16.0))),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ),
                   ],
                 ),
               ),
