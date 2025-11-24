@@ -1434,6 +1434,12 @@ class _OptionsPageState extends State<OptionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final double subtitleFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
+    final double sectionTitleFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
+    final double textFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
+    
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -1442,9 +1448,9 @@ class _OptionsPageState extends State<OptionsPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Opciones', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('Opciones', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text('Información médica y recursos', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+            Text('Información médica y recursos', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54, fontSize: subtitleFontSize)),
           ],
         ),
       ),
@@ -1455,7 +1461,7 @@ class _OptionsPageState extends State<OptionsPage> {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text('Información Médica', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text('Información Médica', style: TextStyle(fontWeight: FontWeight.bold, fontSize: sectionTitleFontSize)),
             ),
             // Tarjeta de Condiciones Médicas
             _buildCard(context, 'Condición médica', 'Gestiona tus condiciones', icon: Icons.favorite, color: Colors.red),
@@ -1464,13 +1470,13 @@ class _OptionsPageState extends State<OptionsPage> {
             // Alergias
             _buildCard(context, 'Alergias', 'Alergias y reacciones', icon: Icons.warning_amber_rounded, color: Colors.orange),
             const SizedBox(height: 12),
-            const Text('Historial y Seguimiento', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('Historial y Seguimiento', style: TextStyle(fontWeight: FontWeight.bold, fontSize: sectionTitleFontSize)),
             const SizedBox(height: 8),
             _buildCard(context, 'Citas médicas', 'Próximas consultas', icon: Icons.calendar_month, color: Colors.blue),
             _buildCard(context, 'Historial de alertas', 'Emergencias registradas', icon: Icons.history, color: Colors.green),
             _buildCard(context, 'Registro de síntomas', 'Diario de salud', icon: Icons.article, color: Colors.teal),
             const SizedBox(height: 12),
-            const Text('Documentos', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('Documentos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: sectionTitleFontSize)),
             const SizedBox(height: 8),
             _buildCard(context, 'Documentos médicos', 'Estudios y recetas', icon: Icons.description, color: Colors.deepPurple),
             _buildCard(context, 'Información de seguro', 'Pólizas y cobertura', icon: Icons.shield, color: Colors.pink),
@@ -1487,20 +1493,20 @@ class _OptionsPageState extends State<OptionsPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Expanded(child: Text('Información de seguro', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyMedium?.color))),
+                          Expanded(child: Text('Información de seguro', style: TextStyle(fontWeight: FontWeight.w600, fontSize: textFontSize, color: Theme.of(context).textTheme.bodyMedium?.color))),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              TextButton(onPressed: () async { await _showInsuranceDialog(context); }, child: const Text('Editar')),
+                              TextButton(onPressed: () async { await _showInsuranceDialog(context); }, child: Text('Editar', style: TextStyle(fontSize: textFontSize * 0.85))),
                               IconButton(onPressed: () async { await _clearInsurance(); }, icon: const Icon(Icons.delete_outline), color: Theme.of(context).iconTheme.color),
                             ],
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if (_insuranceCompany != null) Text(_insuranceCompany!, style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color)),
-                      if (_policyNumber != null) Padding(padding: const EdgeInsets.only(top: 6.0), child: Text('Póliza: $_policyNumber', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color))),
-                      if (_insurancePhone != null) Padding(padding: const EdgeInsets.only(top: 6.0), child: Text('Tel: $_insurancePhone', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color))),
+                      if (_insuranceCompany != null) Text(_insuranceCompany!, style: TextStyle(fontSize: textFontSize, color: Theme.of(context).textTheme.bodyMedium?.color)),
+                      if (_policyNumber != null) Padding(padding: const EdgeInsets.only(top: 6.0), child: Text('Póliza: $_policyNumber', style: TextStyle(fontSize: textFontSize * 0.9, color: Theme.of(context).textTheme.bodySmall?.color))),
+                      if (_insurancePhone != null) Padding(padding: const EdgeInsets.only(top: 6.0), child: Text('Tel: $_insurancePhone', style: TextStyle(fontSize: textFontSize * 0.9, color: Theme.of(context).textTheme.bodySmall?.color))),
                     ],
                   ),
                 ),
@@ -1511,10 +1517,10 @@ class _OptionsPageState extends State<OptionsPage> {
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Row(
-                  children: const <Widget>[
-                    Icon(Icons.warning, color: Colors.red),
-                    SizedBox(width: 12),
-                    Expanded(child: Text('Información importante\nMantén tu información médica actualizada para que los servicios de emergencia puedan asistirte mejor.')),
+                  children: <Widget>[
+                    const Icon(Icons.warning, color: Colors.red),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text('Información importante\nMantén tu información médica actualizada para que los servicios de emergencia puedan asistirte mejor.', style: TextStyle(fontSize: textFontSize * 0.9))),
                   ],
                 ),
               ),
@@ -1527,6 +1533,10 @@ class _OptionsPageState extends State<OptionsPage> {
   }
 
   Widget _buildCard(BuildContext context, String title, String subtitle, {required IconData icon, required Color color}) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
+    final double subtitleFontSize = (screenWidth * 0.032).clamp(12.0, 14.0);
+    
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -1540,8 +1550,8 @@ class _OptionsPageState extends State<OptionsPage> {
           ),
           child: Icon(icon, color: color),
         ),
-        title: Text(title),
-        subtitle: Text(subtitle),
+        title: Text(title, style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: subtitleFontSize)),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _openDetail(context, title),
       ),

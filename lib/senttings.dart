@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:async'; // A veces necesario para Uint8List dependiendo de la versión, pero base64Decode lo usa de dart:convert
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:url_launcher/url_launcher.dart'; // Si lo usas, aunque en este archivo no parece necesario, lo dejo por si acaso.
 
 // Asegúrate de que este archivo exista y tenga 'preferredContact' y 'setPreferredContact'
 import 'preferences.dart'; 
@@ -416,8 +414,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
   Widget build(BuildContext context) {
     // Compute responsive font sizes based on device width
     final double deviceWidth = MediaQuery.of(context).size.width;
-    final double nameFontSize = (deviceWidth * 0.045).clamp(14.0, 18.0) as double;
-    final double phoneFontSize = (deviceWidth * 0.035).clamp(12.0, 14.0) as double;
+    final double nameFontSize = (deviceWidth * 0.045).clamp(14.0, 18.0);
+    final double phoneFontSize = (deviceWidth * 0.035).clamp(12.0, 14.0);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF5F6),

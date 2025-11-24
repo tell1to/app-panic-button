@@ -80,9 +80,15 @@ class _SymptomsPageState extends State<SymptomsPage> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final double headingFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
+    final double textFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
+    final double labelFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registro de Síntomas'),
+        title: Text('Registro de Síntomas', style: TextStyle(fontSize: titleFontSize)),
         backgroundColor: primary,
         elevation: 2,
       ),
@@ -101,11 +107,11 @@ class _SymptomsPageState extends State<SymptomsPage> {
                 children: [
                   CircleAvatar(backgroundColor: primary, child: const Icon(Icons.medical_services, color: Colors.white)),
                   const SizedBox(width: 12),
-                  const Expanded(child: Text('Diario de Síntomas', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Expanded(child: Text('Diario de Síntomas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: headingFontSize))),
                   ElevatedButton.icon(
                     onPressed: () => _showAddDialog(),
                     icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Agregar'),
+                    label: Text('Agregar', style: TextStyle(fontSize: labelFontSize)),
                     style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                   )
                 ],
@@ -118,9 +124,9 @@ class _SymptomsPageState extends State<SymptomsPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.sentiment_satisfied_outlined, size: 68, color: Colors.grey.shade300),
+                          Icon(Icons.sentiment_satisfied_outlined, size: (screenWidth * 0.15).clamp(60.0, 80.0), color: Colors.grey.shade300),
                           const SizedBox(height: 12),
-                          const Text('No hay entradas todavía', style: TextStyle(color: Colors.black54)),
+                          Text('No hay entradas todavía', style: TextStyle(fontSize: textFontSize, color: Colors.black54)),
                         ],
                       ),
                     )
@@ -143,23 +149,23 @@ class _SymptomsPageState extends State<SymptomsPage> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text('Fecha', style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+                                          Text('Fecha', style: TextStyle(fontSize: labelFontSize, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                                           const SizedBox(height: 4),
-                                          Text(_formatDate(dt), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                          Text(_formatDate(dt), style: TextStyle(fontSize: textFontSize, fontWeight: FontWeight.w500)),
                                         ],
                                       ),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(color: _severityColor(e['severity'] as int).withAlpha((0.12 * 255).round()), borderRadius: BorderRadius.circular(6)),
-                                      child: Text('Sev ${e['severity']}', style: TextStyle(color: _severityColor(e['severity'] as int), fontWeight: FontWeight.w700, fontSize: 12)),
+                                      child: Text('Sev ${e['severity']}', style: TextStyle(color: _severityColor(e['severity'] as int), fontWeight: FontWeight.w700, fontSize: labelFontSize)),
                                     )
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                Text('Síntomas', style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+                                Text('Síntomas', style: TextStyle(fontSize: labelFontSize, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 4),
-                                Text(e['symptoms'] as String, style: const TextStyle(fontSize: 14)),
+                                Text(e['symptoms'] as String, style: TextStyle(fontSize: textFontSize)),
                                 const SizedBox(height: 12),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
@@ -211,27 +217,31 @@ class _SymptomsPageState extends State<SymptomsPage> {
         double sev = 5.0;
         
         return StatefulBuilder(builder: (ctx2, setState2) {
+          final double dialogScreenWidth = MediaQuery.of(context).size.width;
+          final double dialogTitleSize = (dialogScreenWidth * 0.045).clamp(16.0, 20.0);
+          final double dialogTextSize = (dialogScreenWidth * 0.035).clamp(12.0, 14.0);
+          
           return AlertDialog(
-            title: const Text('Nueva entrada'),
+            title: Text('Nueva entrada', style: TextStyle(fontSize: dialogTitleSize)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Expanded(child: Text('Fecha: ${_formatDate(chosen)}')),
+                    Expanded(child: Text('Fecha: ${_formatDate(chosen)}', style: TextStyle(fontSize: dialogTextSize))),
                     TextButton(
                       onPressed: () async {
                         final DateTime? picked = await showDatePicker(context: ctx2, initialDate: chosen, firstDate: DateTime(1900), lastDate: DateTime.now().add(const Duration(days: 365)));
                         if (picked != null) setState2(() { chosen = picked; });
                       },
-                      child: const Text('Cambiar')
+                      child: Text('Cambiar', style: TextStyle(fontSize: dialogTextSize))
                     )
                   ]),
                   const SizedBox(height: 8),
-                  TextField(controller: txt, maxLines: 4, decoration: InputDecoration(hintText: 'Describe los síntomas...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+                  TextField(controller: txt, maxLines: 4, style: TextStyle(fontSize: dialogTextSize), decoration: InputDecoration(hintText: 'Describe los síntomas...', hintStyle: TextStyle(fontSize: dialogTextSize), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
                   const SizedBox(height: 12),
-                  const Text('Severidad'),
+                  Text('Severidad', style: TextStyle(fontSize: dialogTextSize)),
                   Slider(value: sev, min: 1, max: 10, divisions: 9, activeColor: _severityColor(sev.round()), label: sev.round().toString(), onChanged: (v) => setState2(() { sev = v; })),
                 ],
               ),
@@ -239,20 +249,20 @@ class _SymptomsPageState extends State<SymptomsPage> {
             actions: [
               TextButton(
                 onPressed: () { if (mounted) Navigator.of(ctx).pop(); },
-                child: const Text('Cancelar')
+                child: Text('Cancelar', style: TextStyle(fontSize: dialogTextSize))
               ),
               ElevatedButton(
                 onPressed: () async {
                   final text = txt.text.trim();
                   if (text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Describe los síntomas antes de guardar.')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Describe los síntomas antes de guardar.', style: TextStyle(fontSize: dialogTextSize))));
                     return;
                   }
                   final navigator = Navigator.of(ctx);
                   await _insertEntry(chosen, text, sev.round());
                   navigator.pop();
                 },
-                child: const Text('Guardar')
+                child: Text('Guardar', style: TextStyle(fontSize: dialogTextSize))
               )
             ],
           );
@@ -273,27 +283,31 @@ class _SymptomsPageState extends State<SymptomsPage> {
         double sev = (entry['severity'] as int).toDouble();
 
         return StatefulBuilder(builder: (ctx2, setState2) {
+          final double dialogScreenWidth = MediaQuery.of(context).size.width;
+          final double dialogTitleSize = (dialogScreenWidth * 0.045).clamp(16.0, 20.0);
+          final double dialogTextSize = (dialogScreenWidth * 0.035).clamp(12.0, 14.0);
+          
           return AlertDialog(
-            title: const Text('Editar entrada'),
+            title: Text('Editar entrada', style: TextStyle(fontSize: dialogTitleSize)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Expanded(child: Text('Fecha: ${_formatDate(chosen)}')),
+                    Expanded(child: Text('Fecha: ${_formatDate(chosen)}', style: TextStyle(fontSize: dialogTextSize))),
                     TextButton(
                       onPressed: () async {
                         final DateTime? picked = await showDatePicker(context: ctx2, initialDate: chosen, firstDate: DateTime(1900), lastDate: DateTime.now().add(const Duration(days: 365)));
                         if (picked != null) setState2(() { chosen = picked; });
                       },
-                      child: const Text('Cambiar')
+                      child: Text('Cambiar', style: TextStyle(fontSize: dialogTextSize))
                     )
                   ]),
                   const SizedBox(height: 8),
-                  TextField(controller: txt, maxLines: 4, decoration: InputDecoration(hintText: 'Describe los síntomas...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+                  TextField(controller: txt, maxLines: 4, style: TextStyle(fontSize: dialogTextSize), decoration: InputDecoration(hintText: 'Describe los síntomas...', hintStyle: TextStyle(fontSize: dialogTextSize), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
                   const SizedBox(height: 12),
-                  const Text('Severidad'),
+                  Text('Severidad', style: TextStyle(fontSize: dialogTextSize)),
                   Slider(value: sev, min: 1, max: 10, divisions: 9, activeColor: _severityColor(sev.round()), label: sev.round().toString(), onChanged: (v) => setState2(() { sev = v; })),
                 ],
               ),
@@ -301,13 +315,13 @@ class _SymptomsPageState extends State<SymptomsPage> {
             actions: [
               TextButton(
                 onPressed: () { if (mounted) Navigator.of(ctx).pop(); },
-                child: const Text('Cancelar')
+                child: Text('Cancelar', style: TextStyle(fontSize: dialogTextSize))
               ),
               ElevatedButton(
                 onPressed: () async {
                   final text = txt.text.trim();
                   if (text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Describe los síntomas antes de guardar.')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Describe los síntomas antes de guardar.', style: TextStyle(fontSize: dialogTextSize))));
                     return;
                   }
                   setState(() {
@@ -322,7 +336,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
                   await _saveEntries();
                   navigator.pop();
                 },
-                child: const Text('Guardar')
+                child: Text('Guardar', style: TextStyle(fontSize: dialogTextSize))
               )
             ],
           );

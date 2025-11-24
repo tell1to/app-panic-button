@@ -104,12 +104,18 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final double subtitleFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
+    final double textFontSize = (screenWidth * 0.035).clamp(12.0, 14.0);
+    final double labelFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Documentos Médicos'),
+        title: Text('Documentos Médicos', style: TextStyle(fontSize: titleFontSize)),
         automaticallyImplyLeading: false,
         actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop())],
       ),
@@ -117,7 +123,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         padding: const EdgeInsets.all(18.0),
         child: Column(
           children: <Widget>[
-            Text('Gestiona tus estudios y recetas médicas', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+            Text('Gestiona tus estudios y recetas médicas', style: TextStyle(fontSize: subtitleFontSize, color: Theme.of(context).textTheme.bodySmall?.color)),
             const SizedBox(height: 18),
             Expanded(
               child: Card(
@@ -139,14 +145,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            Icon(Icons.description_outlined, size: 56, color: Theme.of(context).iconTheme.color),
+                            Icon(Icons.description_outlined, size: (screenWidth * 0.12).clamp(48.0, 64.0), color: Theme.of(context).iconTheme.color),
                             const SizedBox(height: 12),
-                            Text('Sube tus estudios y recetas aquí', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+                            Text('Sube tus estudios y recetas aquí', style: TextStyle(fontSize: subtitleFontSize, color: Theme.of(context).textTheme.bodySmall?.color)),
                             const SizedBox(height: 12),
                             ElevatedButton.icon(
                               onPressed: _pickAndSave,
                               icon: const Icon(Icons.upload_file),
-                              label: const Text('Subir documento'),
+                              label: Text('Subir documento', style: TextStyle(fontSize: labelFontSize)),
                               style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
@@ -156,12 +162,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      const Align(alignment: Alignment.centerLeft, child: Text('Documentos guardados', style: TextStyle(fontWeight: FontWeight.w600))),
+                      Align(alignment: Alignment.centerLeft, child: Text('Documentos guardados', style: TextStyle(fontWeight: FontWeight.w600, fontSize: labelFontSize))),
                       const SizedBox(height: 8),
                       // Document list
                       Expanded(
                         child: _docs.isEmpty
-                            ? Center(child: Text('No hay documentos guardados', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)))
+                            ? Center(child: Text('No hay documentos guardados', style: TextStyle(fontSize: textFontSize, color: Theme.of(context).textTheme.bodySmall?.color)))
                             : ListView.separated(
                                 itemCount: _docs.length,
                                 separatorBuilder: (context, index) => const Divider(height: 16),
@@ -185,8 +191,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                       backgroundColor: Theme.of(context).colorScheme.primary.withAlpha((0.12 * 255).round()),
                                       child: Icon(Icons.insert_drive_file_outlined, color: Theme.of(context).colorScheme.primary),
                                     ),
-                                    title: Text(d['name'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                    subtitle: Text(dateStr.isNotEmpty ? 'Fecha: $dateStr · Tamaño: $sizeKb KB' : 'Tamaño: $sizeKb KB', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+                                    title: Text(d['name'] as String, style: TextStyle(fontWeight: FontWeight.w600, fontSize: textFontSize)),
+                                    subtitle: Text(dateStr.isNotEmpty ? 'Fecha: $dateStr · Tamaño: $sizeKb KB' : 'Tamaño: $sizeKb KB', style: TextStyle(fontSize: labelFontSize, color: Theme.of(context).textTheme.bodySmall?.color)),
                                     trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _deleteDoc(i)),
                                     onTap: () async {
                                       final path = d['path'] as String?;
@@ -219,7 +225,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
                   ),
-                  child: const Text('Cerrar'),
+                  child: Text('Cerrar', style: TextStyle(fontSize: labelFontSize)),
                 ),
               ],
             ),

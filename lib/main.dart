@@ -529,10 +529,13 @@ class _InicioPageState extends State<InicioPage> {
   Widget build(BuildContext context) {
     // Use responsive sizes to avoid overflow on small screens
     final media = MediaQuery.of(context);
+    final double screenWidth = media.size.width;
     final height = media.size.height - media.padding.top - media.padding.bottom -  kToolbarHeight; // available roughly
     final double cardHeight = (height * 0.13).clamp(80.0, 120.0);
     final double emergencyDiameter = (height * 0.45).clamp(220.0, 320.0);
     final double progressDiameter = emergencyDiameter * 0.86;
+    final double titleFontSize = (screenWidth * 0.045).clamp(16.0, 20.0);
+    final double subtitleFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
 
     const double buttonBarHeight = 64.0;
     // responsive sizes for the two small buttons (calculated outside the widget tree)
@@ -561,9 +564,9 @@ class _InicioPageState extends State<InicioPage> {
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const <Widget>[
-                              Text('Bienvenido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                              Text('Sistema de emergencia activo', style: TextStyle(color: Colors.black54)),
+                            children: <Widget>[
+                              Text('Bienvenido', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.bold)),
+                              Text('Sistema de emergencia activo', style: TextStyle(fontSize: subtitleFontSize, color: Colors.black54)),
                             ],
                           ),
                         ),
