@@ -105,6 +105,10 @@ class _InicioPageState extends State<InicioPage> {
   static const String _mainFavoriteKey = 'main_favorite_index';
   // Preferred contact is managed from Settings (preferredContact ValueNotifier).
   late VoidCallback _preferredListener;
+  // Contacts listener
+  late VoidCallback _contactsListener;
+  // Contacts count
+  int _contactosCount = 0;
   
   // Variables para ubicación
   String _ciudad = 'Obteniendo...';
@@ -275,9 +279,10 @@ class _InicioPageState extends State<InicioPage> {
 
   @override
   void dispose() {
-    // remove notifier listener to avoid calling setState after dispose
+    // remove notifier listeners to avoid calling setState after dispose
     try {
       preferredContact.removeListener(_preferredListener);
+      allContacts.removeListener(_contactsListener);
     } catch (_) {}
     _holdTimer?.cancel();
     super.dispose();
@@ -307,6 +312,16 @@ class _InicioPageState extends State<InicioPage> {
       });
     };
     preferredContact.addListener(_preferredListener);
+    
+    // Listen to global contacts list
+    _contactsListener = () {
+      if (!mounted) return;
+      setState(() {
+        _contactosCount = allContacts.value.length;
+      });
+    };
+    allContacts.addListener(_contactsListener);
+    
     // Load persisted preferred contact (if any)
     loadPreferredContact();
     // Load persisted main favorite index
@@ -355,7 +370,7 @@ class _InicioPageState extends State<InicioPage> {
                     Icon(Icons.contacts, color: Colors.purple, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
                     const SizedBox(height: 8),
                     Text('Contactos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text('2 Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
+                    Text('$_contactosCount Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
                   ],
                 ),
               ),

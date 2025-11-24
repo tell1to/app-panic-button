@@ -109,6 +109,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
         setState(() {
           _contactos = List<Map<String, String>>.from(loaded);
         });
+        // Notify all listeners about the loaded contacts list
+        allContacts.value = List<Map<String, String>>.from(loaded);
       }
     } catch (_) {}
   }
@@ -118,6 +120,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
       final sp = await SharedPreferences.getInstance();
       final raw = _contactos.map((m) => jsonEncode(m)).toList();
       await sp.setStringList(_contactsKey, raw);
+      // Notify all listeners about the updated contacts list
+      allContacts.value = List<Map<String, String>>.from(_contactos);
     } catch (_) {}
   }
 

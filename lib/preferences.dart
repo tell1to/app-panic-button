@@ -5,6 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Null means no preferred contact (fallback to 911).
 final ValueNotifier<Map<String, String>?> preferredContact = ValueNotifier<Map<String, String>?>(null);
 
+// Holds the list of all contacts - used to sync across the app
+final ValueNotifier<List<Map<String, String>>> allContacts = ValueNotifier<List<Map<String, String>>>([]);
+
 const _prefNameKey = 'preferred_name';
 const _prefPhoneKey = 'preferred_phone';
 
