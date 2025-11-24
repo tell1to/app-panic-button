@@ -309,6 +309,195 @@ class _InicioPageState extends State<InicioPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Botón seleccionado: $label')));
   }
 
+  // Extracted helpers to reduce build size
+  Widget _buildInfoCards(double cardHeight) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Expanded(
+          child: SizedBox(
+            height: cardHeight,
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(Icons.contacts, color: Colors.purple, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
+                    const SizedBox(height: 8),
+                    Text('Contactos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('2 Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: cardHeight,
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(Icons.location_on, color: Colors.blue, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Ubicación',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: (cardHeight * 0.12).clamp(14.0, 16.0),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Mostrar ubicacion en una sola línea para evitar overflow
+                    _ubicacionCargando
+                        ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(
+                            _pais.isNotEmpty ? '$_ciudad, $_pais' : _ciudad,
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: (cardHeight * 0.1).clamp(11.0, 13.0),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomButtons(double buttonHeight) {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7.0),
+              child: SizedBox(
+                height: buttonHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _setMainFavorite(0),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _mainFavoriteIndex == 0 ? Colors.orange : const Color.fromARGB(255, 9, 127, 238),
+                        minimumSize: Size(0, buttonHeight),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        children: const [
+                          Icon(Icons.call, color: Colors.white, size: 22),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text('911', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_mainFavoriteIndex == 0)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          decoration: BoxDecoration(color: Colors.yellow.shade700, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+                          padding: const EdgeInsets.all(6),
+                          child: const Icon(Icons.star, size: 20, color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7.0),
+              child: SizedBox(
+                height: buttonHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _preferredContact == null ? null : () => _setMainFavorite(1),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _mainFavoriteIndex == 1 ? Colors.orange : (_preferredContact == null ? Colors.grey : Colors.green),
+                        minimumSize: Size(0, buttonHeight),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          const Icon(Icons.person, color: Colors.white, size: 22),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _preferredContact?['nombre'] ?? 'Sin contacto',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _preferredContact?['telefono'] ?? '',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_mainFavoriteIndex == 1 && _preferredContact != null)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          decoration: BoxDecoration(color: Colors.yellow.shade700, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+                          padding: const EdgeInsets.all(6),
+                          child: const Icon(Icons.star, size: 20, color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use responsive sizes to avoid overflow on small screens
@@ -354,83 +543,7 @@ class _InicioPageState extends State<InicioPage> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Expanded(
-                          child: SizedBox(
-                            height: cardHeight,
-                            child: Card(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    Icon(Icons.contacts, color: Colors.purple, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
-                                    const SizedBox(height: 8),
-                                    Text('Contactos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: (cardHeight * 0.12).clamp(14.0, 16.0)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    Text('2 Agregados', style: TextStyle(color: Colors.black54, fontSize: (cardHeight * 0.1).clamp(12.0, 13.0))),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: cardHeight,
-                            child: Card(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    Icon(Icons.location_on, color: Colors.blue, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Ubicación',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: (cardHeight * 0.12).clamp(14.0, 16.0),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    // Aquí mostramos la ubicación real en una sola línea
-                                    _ubicacionCargando
-                                        ? SizedBox(
-                                            width: 12,
-                                            height: 12,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                                            ),
-                                          )
-                                        : Text(
-                                            _pais.isNotEmpty ? '$_ciudad, $_pais' : _ciudad,
-                                            style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: (cardHeight * 0.1).clamp(11.0, 13.0),
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.center,
-                                          ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildInfoCards(cardHeight),
                     const SizedBox(height: 24),
                     SizedBox(
                       height: emergencyDiameter + 40,
@@ -484,120 +597,7 @@ class _InicioPageState extends State<InicioPage> {
                 left: 16,
                 right: 16,
                 bottom: (media.size.height * 0.12).clamp(12.0, 140.0),
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 911 button (now configures favorite instead of calling directly)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 7.0),
-                          child: SizedBox(
-                            height: buttonHeight,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () => _setMainFavorite(0),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _mainFavoriteIndex == 0 ? Colors.orange : const Color.fromARGB(255, 9, 127, 238),
-                                    minimumSize: Size(0, buttonHeight),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: const [
-                                      Icon(Icons.call, color: Colors.white, size: 22),
-                                      SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text('911', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (_mainFavoriteIndex == 0)
-                                  Positioned(
-                                    top: 6,
-                                    right: 6,
-                                    child: Container(
-                                      decoration: BoxDecoration(color: Colors.yellow.shade700, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
-                                      padding: const EdgeInsets.all(6),
-                                      child: const Icon(Icons.star, size: 20, color: Colors.white),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      // Preferred contact button (shows name if set)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 7.0),
-                          child: SizedBox(
-                            height: buttonHeight,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: _preferredContact == null ? null : () => _setMainFavorite(1),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _mainFavoriteIndex == 1 ? Colors.orange : (_preferredContact == null ? Colors.grey : Colors.green),
-                                    minimumSize: Size(0, buttonHeight),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      const Icon(Icons.person, color: Colors.white, size: 22),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              _preferredContact?['nombre'] ?? 'Sin contacto',
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              _preferredContact?['telefono'] ?? '',
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (_mainFavoriteIndex == 1 && _preferredContact != null)
-                                  Positioned(
-                                    top: 6,
-                                    right: 6,
-                                    child: Container(
-                                      decoration: BoxDecoration(color: Colors.yellow.shade700, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
-                                      padding: const EdgeInsets.all(6),
-                                      child: const Icon(Icons.star, size: 20, color: Colors.white),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _buildBottomButtons(buttonHeight),
               ),
             ],
           ),
