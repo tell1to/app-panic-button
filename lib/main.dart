@@ -8,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'options.dart';
 import 'senttings.dart';
 import 'preferences.dart';
+import 'validators/validators.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -131,10 +132,10 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
-  // Normalize phone numbers to digits and leading + (e.g. "+51 9 1234 567" -> "+5191234567")
+  // Normalize phone numbers to Ecuador format (e.g. "0963522505" or "+593963522505" -> "0963522505")
   String _normalizePhone(String phone) {
     if (phone.isEmpty) return phone;
-    return phone.replaceAll(RegExp(r'[^+\d]'), '');
+    return Validators.normalizePhoneNumber(phone);
   }
 
   void _startHold() {

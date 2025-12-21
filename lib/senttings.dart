@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_selector/file_selector.dart';
 
-// Asegúrate de que este archivo exista y tenga 'preferredContact' y 'setPreferredContact'
-import 'preferences.dart'; 
+// Importar validadores y servicio de almacenamiento seguro
+import 'validators/validators.dart';
+import 'services/secure_storage_service.dart';
+import 'preferences.dart';
 
 class SenttingsPage extends StatefulWidget {
   const SenttingsPage({super.key});
@@ -127,17 +129,15 @@ class _SenttingsPageState extends State<SenttingsPage> {
 
   // --- VALIDACIONES ---
   bool _esNombreValido(String nombre) {
-    return RegExp(r'^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$').hasMatch(nombre) && nombre.isNotEmpty;
+    return Validators.isValidName(nombre);
   }
 
   bool _esTelefonoValido(String telefono) {
-    // Accept only 10 digits, no spaces
-    return RegExp(r'^\d{10}$').hasMatch(telefono);
+    return Validators.isValidPhone(telefono);
   }
 
   bool _esEdadValida(String edad) {
-    int? edadInt = int.tryParse(edad);
-    return edadInt != null && edadInt >= 1 && edadInt <= 120;
+    return Validators.isValidAge(edad);
   }
 
   // --- Contactos ---
@@ -194,32 +194,37 @@ class _SenttingsPageState extends State<SenttingsPage> {
                   return;
                 }
                 if (!_esTelefonoValido(telefono)) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Teléfono inválido. Use 10 dígitos sin espacios (ej: 9123456789).')));
+                  messenger.showSnackBar(const SnackBar(content: Text('Teléfono inválido. Use formato de Ecuador: 0963522505 o +593963522505')));
                   return;
                 }
 
+                // Normalizar número de teléfono al formato local de Ecuador (0963522505)
+                final telefonoNormalizado = Validators.normalizePhoneNumber(telefono);
+
                 String? previousPhone;
                 if (index == null) {
-                  _contactos.add({'nombre': nombre, 'telefono': telefono});
+                  _contactos.add({'nombre': nombre, 'telefono': telefonoNormalizado});
                 } else {
                   previousPhone = _contactos[index]['telefono'];
-                  _contactos[index] = {'nombre': nombre, 'telefono': telefono};
+                  _contactos[index] = {'nombre': nombre, 'telefono': telefonoNormalizado};
                 }
 
                 await _saveContacts();
 
-                // If this is the first contact added, mark it as preferred and select it for main button
+                // Guardar número de teléfono de forma segura si es el primer contacto
                 if (index == null && _contactos.length == 1) {
-                  await setPreferredContact({'nombre': nombre, 'telefono': telefono});
+                  await setPreferredContact({'nombre': nombre, 'telefono': telefonoNormalizado});
+                  await SecureStorageService.saveEmergencyContact(nombre, telefonoNormalizado);
                   try {
                     final sp = await SharedPreferences.getInstance();
                     await sp.setInt('main_favorite_index', 1);
                   } catch (_) {}
                 }
 
-                // If we edited a contact that was previously the preferred, update the preferred info
+                // Si editamos un contacto que era el preferido, actualizar almacenamiento seguro
                 if (index != null && previousPhone != null && preferredContact.value != null && preferredContact.value!['telefono'] == previousPhone) {
-                  await setPreferredContact({'nombre': nombre, 'telefono': telefono});
+                  await setPreferredContact({'nombre': nombre, 'telefono': telefonoNormalizado});
+                  await SecureStorageService.saveEmergencyContact(nombre, telefonoNormalizado);
                 }
 
                 if (!mounted) return;
