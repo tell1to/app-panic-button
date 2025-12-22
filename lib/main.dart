@@ -9,6 +9,7 @@ import 'options.dart';
 import 'senttings.dart';
 import 'preferences.dart';
 import 'validators/validators.dart';
+import 'services/rate_limiter.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -115,6 +116,14 @@ class _InicioPageState extends State<InicioPage> {
   String _ciudad = 'Obteniendo...';
   String _pais = '';
   bool _ubicacionCargando = true;
+  
+  // Rate Limiting para botón de pánico
+  static const String _panicButtonAction = 'panic_button_main';
+  static const int _maxPanicAttempts = 3; // 3 intentos máximo
+  static const int _panicLimitWindowHours = 3; // En 3 horas
+  
+  // Estado del rate limit (para mostrar UI)
+  RateLimitInfo? _rateLimitInfo;
 
   Future<void> _callNumber(BuildContext context, String number) async {
     final String normalized = _normalizePhone(number);
@@ -159,8 +168,60 @@ class _InicioPageState extends State<InicioPage> {
     setState(() => _holdProgress = 0.0);
   }
 
-  void _activateEmergency() {
+  /// Actualizar información del rate limit
+  Future<void> _updateRateLimitInfo() async {
+    final info = await RateLimiter.getInfo(
+      action: _panicButtonAction,
+      maxAttempts: _maxPanicAttempts,
+      windowHours: _panicLimitWindowHours,
+    );
+    
+    if (mounted) {
+      setState(() {
+        _rateLimitInfo = info;
+      });
+    }
+  }
+
+  void _activateEmergency() async {
     print('[main._activateEmergency] INICIANDO ACTIVACIÓN DE EMERGENCIA');
+    
+    // Verificar rate limiting primero
+    final canActivate = await RateLimiter.canExecute(
+      action: _panicButtonAction,
+      maxAttempts: _maxPanicAttempts,
+      windowHours: _panicLimitWindowHours,
+    );
+
+    if (!canActivate) {
+      // Si se alcanzó el límite, mostrar mensaje
+      final rateLimitInfo = await RateLimiter.getInfo(
+        action: _panicButtonAction,
+        maxAttempts: _maxPanicAttempts,
+        windowHours: _panicLimitWindowHours,
+      );
+
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Límite de intentos alcanzado. ${rateLimitInfo.readableInfo}'),
+          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      
+      print('[main._activateEmergency] Rate limit alcanzado. ${rateLimitInfo.readableInfo}');
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          setState(() => _holdProgress = 0.0);
+          _updateRateLimitInfo();
+        }
+      });
+      return;
+    }
+
+    // Si pasó el rate limit, proceder con la activación
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Alerta activada: notificando contactos y servicios')),
     );
@@ -194,6 +255,7 @@ class _InicioPageState extends State<InicioPage> {
       if (_preferredContact != null && (_preferredContact!['telefono']?.isNotEmpty ?? false)) {
         numberToCall = _preferredContact!['telefono']!;
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));
         numberToCall = '911';
       }
@@ -204,7 +266,10 @@ class _InicioPageState extends State<InicioPage> {
     print('[main._activateEmergency] Llamando al número: $numberToCall');
     _callNumber(context, numberToCall);
     Future.delayed(const Duration(milliseconds: 800), () {
-      setState(() => _holdProgress = 0.0);
+      if (mounted) {
+        setState(() => _holdProgress = 0.0);
+        _updateRateLimitInfo();
+      }
     });
     print('[main._activateEmergency] FIN DE ACTIVACIÓN DE EMERGENCIA');
   }
@@ -298,6 +363,9 @@ class _InicioPageState extends State<InicioPage> {
     
     // Obtener ubicación al iniciar
     _obtenerUbicacion();
+    
+    // Cargar información del rate limit
+    _updateRateLimitInfo();
     
     // Listen to global preferred contact from Settings
     _preferredListener = () {
@@ -541,6 +609,45 @@ class _InicioPageState extends State<InicioPage> {
     );
   }
 
+  /// Widget que muestra el estado del rate limit
+  Widget _buildRateLimitIndicator() {
+    if (_rateLimitInfo == null) {
+      return const SizedBox.shrink();
+    }
+
+    final info = _rateLimitInfo!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final fontSize = (screenWidth * 0.035).clamp(12.0, 14.0);
+
+    // Determinar color basado en estado
+    Color textColor;
+    String statusText;
+
+    if (info.isLimited) {
+      textColor = Colors.red;
+      statusText = '⚠️ Límite alcanzado - ${info.readableInfo}';
+    } else if (info.attemptsRemaining == 1) {
+      textColor = Colors.orange;
+      statusText = '⚠️ Intentos: ${info.attemptsUsed}/${info.maxAttempts} - Último intento disponible';
+    } else {
+      textColor = Colors.grey[700] ?? Colors.grey;
+      statusText = '✓ Intentos: ${info.attemptsUsed}/${info.maxAttempts}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: Text(
+        statusText,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: textColor,
+          fontWeight: info.isLimited ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use responsive sizes to avoid overflow on small screens
@@ -638,6 +745,12 @@ class _InicioPageState extends State<InicioPage> {
                     ),
                   ],
                 ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: (media.size.height * 0.02).clamp(8.0, 50.0),
+                child: _buildRateLimitIndicator(),
               ),
               Positioned(
                 left: 16,

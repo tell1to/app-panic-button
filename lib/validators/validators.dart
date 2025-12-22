@@ -1,5 +1,3 @@
-import 'package:phone_numbers_parser/phone_numbers_parser.dart';
-
 /// Módulo centralizado de validadores para la aplicación
 /// Configurado específicamente para Ecuador
 class Validators {
