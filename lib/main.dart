@@ -10,6 +10,8 @@ import 'senttings.dart';
 import 'preferences.dart';
 import 'validators/validators.dart';
 import 'services/rate_limiter.dart';
+import 'services/firebase_service.dart';
+import 'services/alert_service.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -17,6 +19,16 @@ final GlobalKey optionsPageKey = GlobalKey();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   print('[main] iniciando app...');
+  
+  // Inicializar Firebase
+  try {
+    await FirebaseService.instance.initialize();
+    print('[main] Firebase inicializado correctamente');
+  } catch (e) {
+    print('[main] ERROR al inicializar Firebase: $e');
+    // Continuar igualmente si Firebase no se inicializa
+  }
+  
   runApp(const MyApp());
 }
 class MyApp extends StatelessWidget {
@@ -116,6 +128,7 @@ class _InicioPageState extends State<InicioPage> {
   String _ciudad = 'Obteniendo...';
   String _pais = '';
   bool _ubicacionCargando = true;
+  Position? _lastLocation; // Guardar última ubicación conocida
   
   // Rate Limiting para botón de pánico
   static const String _panicButtonAction = 'panic_button_main';
@@ -226,6 +239,31 @@ class _InicioPageState extends State<InicioPage> {
       const SnackBar(content: Text('Alerta activada: notificando contactos y servicios')),
     );
     
+    // Registrar evento en Firebase Analytics
+    await FirebaseService.instance.logEvent('emergency_activated', {
+      'timestamp': DateTime.now().toIso8601String(),
+      'has_location': _lastLocation != null,
+    });
+    
+    // Crear alerta en Firebase
+    try {
+      final userId = 'user_default'; // TODO: Implementar autenticación
+      await AlertService.instance.initialize(userId);
+      
+      await AlertService.instance.createAlert(
+        latitude: _lastLocation?.latitude,
+        longitude: _lastLocation?.longitude,
+        contactsNotified: [],
+        description: 'Alerta de pánico activada',
+        numberCalled: '',
+      );
+      
+      print('[main._activateEmergency] Alerta guardada en Firebase');
+    } catch (e) {
+      print('[main._activateEmergency] ERROR al guardar alerta: $e');
+      FirebaseService.instance.recordError(e, StackTrace.current, reason: 'Error al guardar alerta en Firebase');
+    }
+    
     // Añadir entrada al historial de alertas en OptionsPage (si existe)
     try {
       print('[main._activateEmergency] Intentando acceder a optionsPageKey.currentState');
@@ -318,6 +356,9 @@ class _InicioPageState extends State<InicioPage> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      
+      // Guardar la ubicación
+      _lastLocation = position;
 
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
