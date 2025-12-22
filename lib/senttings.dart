@@ -29,6 +29,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
   static const String _profileDiseasesKey = 'profile_enfermedades';
 
   // Variables del perfil
+  String _ci = "";
   String _nombres = "";
   String _apellidos = "";
   String _edad = "";
@@ -58,8 +59,10 @@ class _SenttingsPageState extends State<SenttingsPage> {
       final apellidos = sp.getString(_profileLastKey) ?? '';
       final edad = sp.getString(_profileAgeKey) ?? '';
       final enfermedades = sp.getStringList(_profileDiseasesKey) ?? [];
+      final ci = await SecureStorageService.getCI() ?? '';
       if (!mounted) return;
       setState(() {
+        _ci = ci;
         _nombres = nombres;
         _apellidos = apellidos;
         _edad = edad;
@@ -75,6 +78,13 @@ class _SenttingsPageState extends State<SenttingsPage> {
       await sp.setString(_profileLastKey, _apellidos);
       await sp.setString(_profileAgeKey, _edad);
       await sp.setStringList(_profileDiseasesKey, _enfermedades);
+      await SecureStorageService.saveUserProfile(
+        ci: _ci,
+        firstName: _nombres,
+        lastName: _apellidos,
+        age: _edad,
+        diseases: jsonEncode(_enfermedades),
+      );
     } catch (_) {}
   }
 
@@ -270,6 +280,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
   }
 
   void _showEditProfileDialog() {
+    final ciController = TextEditingController(text: _ci);
     final nombresController = TextEditingController(text: _nombres);
     final apellidosController = TextEditingController(text: _apellidos);
     final edadController = TextEditingController(text: _edad);
@@ -310,6 +321,14 @@ class _SenttingsPageState extends State<SenttingsPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Cédula de Identidad'),
+                      controller: ciController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 10,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    ),
+                    const SizedBox(height: 8),
                     TextField(
                       decoration: const InputDecoration(labelText: 'Nombres'),
                       controller: nombresController,
@@ -352,11 +371,24 @@ class _SenttingsPageState extends State<SenttingsPage> {
                 ElevatedButton(
                   child: const Text('Guardar'),
                   onPressed: () async {
+                    final ci = ciController.text.trim();
                     final nombres = nombresController.text.trim();
                     final apellidos = apellidosController.text.trim();
                     final edad = edadController.text.trim();
                     final navigator = Navigator.of(context);
 
+                    if (ci.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('La cédula de identidad es requerida.'))
+                      );
+                      return;
+                    }
+                    if (ci.length < 10) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('La cédula debe tener 10 dígitos.'))
+                      );
+                      return;
+                    }
                     if (!_esNombreValido(nombres) || !_esNombreValido(apellidos)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Nombres y apellidos no pueden estar vacíos y solo deben contener letras y espacios.'))
@@ -377,6 +409,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
 
                     if (!mounted) return;
                     setState(() {
+                      _ci = ci;
                       _nombres = nombres;
                       _apellidos = apellidos;
                       _edad = edad;
@@ -433,9 +466,9 @@ class _SenttingsPageState extends State<SenttingsPage> {
                 ),
                 title: const Text('Perfil personal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 subtitle: Text(
-                  _nombres.isEmpty && _apellidos.isEmpty && _edad.isEmpty && _enfermedades.isEmpty
-                    ? 'Editar información médica'
-                    : 'Nombre: $_nombres\nApellido: $_apellidos\nEdad: $_edad\nEnfermedades: ${_enfermedades.join(", ")}',
+                  _ci.isEmpty && _nombres.isEmpty && _apellidos.isEmpty && _edad.isEmpty && _enfermedades.isEmpty
+                    ? 'Editar información personal y médica'
+                    : 'CI: $_ci\nNombre: $_nombres\nApellido: $_apellidos\nEdad: $_edad\nEnfermedades: ${_enfermedades.isEmpty ? "Ninguna" : _enfermedades.join(", ")}',
                   style: const TextStyle(fontSize: 13),
                 ),
                 trailing: TextButton(

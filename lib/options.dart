@@ -9,6 +9,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'symptoms.dart';
 import 'documents.dart';
+import 'services/alert_service.dart';
+import 'services/secure_storage_service.dart';
 
 class OptionsPage extends StatefulWidget {
   const OptionsPage({super.key});
@@ -31,7 +33,8 @@ class _OptionsPageState extends State<OptionsPage> {
   // Historial de alertas
   final List<Map<String, dynamic>> _alerts = [];
 
-  int _nextAlertId = 1;
+  String? _userCI; // CI del usuario para generar IDs descriptivos
+  int _nextAlertId = 1; // Contador secuencial para IDs de alertas (formato: CI_mod1, CI_mod2, etc)
   bool _storagePermissionRequested = false;
 
   Future<void> _requestStoragePermissionIfNeeded() async {
@@ -126,6 +129,12 @@ class _OptionsPageState extends State<OptionsPage> {
     _loadAppointments();
     _loadAllergies();
     
+    // Cargar CI del usuario para generar IDs descriptivos
+    _loadUserCI();
+    
+    // Inicializar AlertService desde storage (lee CI del usuario)
+    AlertService.instance.initializeFromStorage();
+    
     // Solicitar permisos de almacenamiento inmediatamente después de que el widget esté montado
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _requestStoragePermissionIfNeeded();
@@ -219,8 +228,20 @@ class _OptionsPageState extends State<OptionsPage> {
 
     print('[alerts] addAlert procesando: finalLocation="$finalLocation"');
     
+    // Generar ID con formato: CI_modN (ej: 1756278550_mod1, 1756278550_mod2)
+    // Si no hay CI, usar timestamp como fallback
+    final String alertId;
+    if (_userCI != null && _userCI!.isNotEmpty) {
+      alertId = '${_userCI}_mod${_nextAlertId}';
+      _nextAlertId++;
+      print('[alerts] ID generado con CI: $alertId');
+    } else {
+      alertId = DateTime.now().millisecondsSinceEpoch.toString();
+      print('[alerts] ID generado sin CI (fallback a timestamp): $alertId');
+    }
+    
     final alert = {
-      'id': _nextAlertId,
+      'id': alertId,
       'datetime': datetime,
       'location': finalLocation,
       'latitude': finalLat,
@@ -232,7 +253,6 @@ class _OptionsPageState extends State<OptionsPage> {
     
     setState(() {
       _alerts.insert(0, alert);
-      _nextAlertId++;
     });
     
     print('[alerts] alerta insertada en lista. Total alertas: ${_alerts.length}');
@@ -404,6 +424,7 @@ class _OptionsPageState extends State<OptionsPage> {
             'filename': a['filename'],
           }).toList();
       await prefs.setString('alerts', jsonEncode(serializable));
+      // Persistir contador secuencial para IDs
       await prefs.setInt('nextAlertId', _nextAlertId);
     } catch (e) {
       // ignore errors silently (best-effort persistence)
@@ -418,22 +439,22 @@ class _OptionsPageState extends State<OptionsPage> {
         setState(() {
           _alerts.clear();
           _alerts.addAll(fileAlerts);
-          _nextAlertId = _alerts.isEmpty ? 1 : (_alerts.map((e) => e['id'] as int).reduce((a, b) => a > b ? a : b) + 1);
         });
         print('[alerts] alertas cargadas desde archivos: ${_alerts.length}');
+        // Cargar contador
+        _loadNextAlertId();
         return;
       }
       // Fallback to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final String? data = prefs.getString('alerts');
-      final int? savedNext = prefs.getInt('nextAlertId');
       if (data != null) {
         final List<dynamic> list = jsonDecode(data);
         setState(() {
           _alerts.clear();
           for (var item in list) {
             _alerts.add({
-              'id': item['id'] as int,
+              'id': item['id'],
               'datetime': DateTime.parse(item['datetime'] as String),
               'location': item['location'] as String,
               'latitude': (item['latitude'] as num?)?.toDouble(),
@@ -443,19 +464,46 @@ class _OptionsPageState extends State<OptionsPage> {
               'filename': item['filename'],
             });
           }
-          if (savedNext != null) {
-            _nextAlertId = savedNext;
-          } else {
-            _nextAlertId = _alerts.isEmpty ? 1 : (_alerts.map((e) => e['id'] as int).reduce((a, b) => a > b ? a : b) + 1);
-          }
         });
         print('[alerts] alertas cargadas desde SharedPreferences: ${_alerts.length}');
       } else {
-        if (savedNext != null) _nextAlertId = savedNext;
         print('[alerts] no hay alertas guardadas');
       }
+      // Cargar contador
+      _loadNextAlertId();
     } catch (e) {
       print('[alerts] error cargando alertas: $e');
+    }
+  }
+
+  /// Cargar el contador secuencial de IDs desde SharedPreferences
+  Future<void> _loadNextAlertId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedNext = prefs.getInt('nextAlertId');
+      if (savedNext != null) {
+        _nextAlertId = savedNext;
+        print('[alerts] contador cargado: $_nextAlertId');
+      }
+    } catch (e) {
+      print('[alerts] error cargando contador: $e');
+    }
+  }
+
+  /// Cargar CI del usuario desde SecureStorageService
+  Future<void> _loadUserCI() async {
+    try {
+      final ci = await SecureStorageService.getCI();
+      if (mounted && ci != null && ci.isNotEmpty) {
+        setState(() {
+          _userCI = ci;
+        });
+        print('[options] CI del usuario cargado: $_userCI');
+      } else {
+        print('[options] No hay CI configurado');
+      }
+    } catch (e) {
+      print('[options] Error al cargar CI: $e');
     }
   }
 
@@ -1132,11 +1180,47 @@ class _OptionsPageState extends State<OptionsPage> {
                                       final result = await _showAlertDetailDialog(context, _alerts[i]);
                                       if (result != null) {
                                         if (!mounted) return;
+                                        
+                                        // Extraer ID de la alerta
+                                        final alertId = result['id']?.toString() ?? '';
+                                        
+                                        // Actualizar localmente
                                         setState(() => _alerts[i] = result);
+                                        
+                                        // Guardar localmente en archivo y SharedPreferences
                                         try {
                                           await _saveAlertToFile(result);
                                         } catch (_) {}
                                         await _saveAlerts();
+                                        
+                                        // Actualizar en Firebase
+                                        try {
+                                          await AlertService.instance.updateAlert(
+                                            alertId: alertId,
+                                            description: result['description'] as String?,
+                                            location: result['location'] as String?,
+                                            status: result['status'] as String?,
+                                          );
+                                          print('[options] Alerta actualizada en Firebase: $alertId');
+                                          
+                                          if (!mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('✓ Alerta actualizada en Firebase'),
+                                              duration: Duration(seconds: 2),
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          print('[options] Error al actualizar en Firebase: $e');
+                                          if (!mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Error al actualizar Firebase: $e'),
+                                              duration: const Duration(seconds: 3),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
                                       }
                                     },
                                   child: const Text('Ver detalles'),

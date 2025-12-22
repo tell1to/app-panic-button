@@ -132,8 +132,8 @@ class _InicioPageState extends State<InicioPage> {
   
   // Rate Limiting para botón de pánico
   static const String _panicButtonAction = 'panic_button_main';
-  static const int _maxPanicAttempts = 3; // 3 intentos máximo
-  static const int _panicLimitWindowHours = 3; // En 3 horas
+  static const int _maxPanicAttempts = 4; // 4 intentos máximo
+  static const int _panicLimitWindowMinutes = 2; // En 2 minutos
   
   // Estado del rate limit (para mostrar UI)
   RateLimitInfo? _rateLimitInfo;
@@ -186,7 +186,7 @@ class _InicioPageState extends State<InicioPage> {
     final info = await RateLimiter.getInfo(
       action: _panicButtonAction,
       maxAttempts: _maxPanicAttempts,
-      windowHours: _panicLimitWindowHours,
+      windowMinutes: _panicLimitWindowMinutes,
     );
     
     if (mounted) {
@@ -203,7 +203,7 @@ class _InicioPageState extends State<InicioPage> {
     final canActivate = await RateLimiter.canExecute(
       action: _panicButtonAction,
       maxAttempts: _maxPanicAttempts,
-      windowHours: _panicLimitWindowHours,
+      windowMinutes: _panicLimitWindowMinutes,
     );
 
     if (!canActivate) {
@@ -211,7 +211,7 @@ class _InicioPageState extends State<InicioPage> {
       final rateLimitInfo = await RateLimiter.getInfo(
         action: _panicButtonAction,
         maxAttempts: _maxPanicAttempts,
-        windowHours: _panicLimitWindowHours,
+        windowMinutes: _panicLimitWindowMinutes,
       );
 
       if (!mounted) return;
@@ -247,8 +247,9 @@ class _InicioPageState extends State<InicioPage> {
     
     // Crear alerta en Firebase
     try {
-      final userId = 'user_default'; // TODO: Implementar autenticación
-      await AlertService.instance.initialize(userId);
+      // Obtener CI del usuario desde secure storage
+      // Si no hay CI configurado, usará 'user_default'
+      await AlertService.instance.initializeFromStorage();
       
       await AlertService.instance.createAlert(
         latitude: _lastLocation?.latitude,

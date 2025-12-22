@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'secure_storage_service.dart';
 
 /// Modelo de Alerta
 class AlertModel {
@@ -31,6 +32,8 @@ class AlertModel {
       'id': id,
       'userId': userId,
       'timestamp': timestamp.millisecondsSinceEpoch,
+      'date': _formatDate(timestamp),
+      'time': _formatTime(timestamp),
       'latitude': latitude,
       'longitude': longitude,
       'status': status,
@@ -56,6 +59,23 @@ class AlertModel {
       numberCalled: json['numberCalled'] as String?,
     );
   }
+
+  /// Formato: "22 de Diciembre de 2025"
+  static String _formatDate(DateTime dt) {
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return '${dt.day} de ${monthNames[dt.month - 1]} de ${dt.year}';
+  }
+
+  /// Formato: "14:30:45" (24 horas)
+  static String _formatTime(DateTime dt) {
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final second = dt.second.toString().padLeft(2, '0');
+    return '$hour:$minute:$second';
+  }
 }
 
 /// Servicio para gestionar alertas en Firebase Realtime Database
@@ -69,7 +89,19 @@ class AlertService {
 
   AlertService._internal();
 
-  /// Inicializar el servicio con el ID del usuario
+  /// Inicializar el servicio automáticamente desde CI del usuario
+  /// Si no hay CI, usa 'user_default'
+  Future<void> initializeFromStorage() async {
+    try {
+      _userId = await SecureStorageService.getUserId();
+      print('[AlertService.initializeFromStorage] Inicializado con userId: $_userId');
+    } catch (e) {
+      _userId = 'user_default';
+      print('[AlertService.initializeFromStorage] Error, usando user_default: $e');
+    }
+  }
+
+  /// Inicializar el servicio con el ID del usuario (método legado)
   Future<void> initialize(String userId) async {
     _userId = userId;
     print('[AlertService.initialize] Inicializado con usuario: $userId');
@@ -164,6 +196,42 @@ class AlertService {
       print('[AlertService.updateAlertStatus] Estado actualizado: $alertId -> $newStatus');
     } catch (e) {
       print('[AlertService.updateAlertStatus] ERROR: $e');
+      rethrow;
+    }
+  }
+
+  /// Actualizar múltiples campos de una alerta (descripción, ubicación, estado)
+  Future<void> updateAlert({
+    required String alertId,
+    String? description,
+    String? location,
+    String? status,
+  }) async {
+    if (_userId == null) {
+      throw Exception('AlertService no inicializado');
+    }
+
+    try {
+      final updates = <String, dynamic>{};
+      
+      if (description != null) updates['description'] = description;
+      if (location != null) updates['location'] = location;
+      if (status != null) updates['status'] = status;
+
+      if (updates.isEmpty) {
+        print('[AlertService.updateAlert] No hay cambios para actualizar');
+        return;
+      }
+
+      await _database
+          .child('alerts')
+          .child(_userId!)
+          .child(alertId)
+          .update(updates);
+
+      print('[AlertService.updateAlert] Alerta actualizada: $alertId con cambios: $updates');
+    } catch (e) {
+      print('[AlertService.updateAlert] ERROR: $e');
       rethrow;
     }
   }

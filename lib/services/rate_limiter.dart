@@ -6,9 +6,9 @@ class RateLimiter {
   // Claves para almacenamiento persistente
   static const String _timestampsKey = 'rate_limit_timestamps';
 
-  // Configuración por defecto: máximo 3 activaciones en 3 horas
-  static const int defaultMaxActivations = 3;
-  static const int defaultWindowHours = 3;
+  // Configuración por defecto: máximo 4 activaciones en 2 minutos (desarrollo)
+  static const int defaultMaxActivations = 4;
+  static const int defaultWindowMinutes = 2;
 
   /// Verificar si una acción está permitida según el rate limit
   /// Retorna true si la acción puede realizarse, false si ha alcanzado el límite
@@ -16,15 +16,15 @@ class RateLimiter {
   /// Parámetros:
   /// - [action]: identificador único de la acción (ej: 'panic_button')
   /// - [maxAttempts]: número máximo de intentos permitidos
-  /// - [windowHours]: ventana de tiempo en horas
+  /// - [windowMinutes]: ventana de tiempo en minutos
   static Future<bool> canExecute({
     required String action,
     int maxAttempts = defaultMaxActivations,
-    int windowHours = defaultWindowHours,
+    int windowMinutes = defaultWindowMinutes,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final windowDuration = Duration(hours: windowHours);
+    final windowDuration = Duration(minutes: windowMinutes);
 
     // Obtener timestamps previos del almacenamiento
     final storedTimestamps = prefs.getStringList('${_timestampsKey}_$action') ?? [];
@@ -68,11 +68,11 @@ class RateLimiter {
   static Future<RateLimitInfo> getInfo({
     required String action,
     int maxAttempts = defaultMaxActivations,
-    int windowHours = defaultWindowHours,
+    int windowMinutes = defaultWindowMinutes,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final windowDuration = Duration(hours: windowHours);
+    final windowDuration = Duration(minutes: windowMinutes);
 
     // Obtener timestamps previos
     final storedTimestamps = prefs.getStringList('${_timestampsKey}_$action') ?? [];
@@ -102,7 +102,7 @@ class RateLimiter {
     return RateLimitInfo(
       attemptsUsed: validTimestamps.length,
       maxAttempts: maxAttempts,
-      windowHours: windowHours,
+      windowMinutes: windowMinutes,
       isLimited: validTimestamps.length >= maxAttempts,
       timeUntilNextAttempt: timeUntilNext,
       nextAvailableTime: timeUntilNext != null 
@@ -136,7 +136,7 @@ class RateLimiter {
 class RateLimitInfo {
   final int attemptsUsed;
   final int maxAttempts;
-  final int windowHours;
+  final int windowMinutes;
   final bool isLimited;
   final Duration? timeUntilNextAttempt;
   final DateTime? nextAvailableTime;
@@ -144,7 +144,7 @@ class RateLimitInfo {
   RateLimitInfo({
     required this.attemptsUsed,
     required this.maxAttempts,
-    required this.windowHours,
+    required this.windowMinutes,
     required this.isLimited,
     this.timeUntilNextAttempt,
     this.nextAvailableTime,
