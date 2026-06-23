@@ -30,23 +30,31 @@ class FirebaseService {
     }
 
     try {
-      print('[FirebaseService.initialize] Inicializando Firebase...');
+      print('[FirebaseService.initialize] ========================================');
+      print('[FirebaseService.initialize] INICIALIZANDO FIREBASE');
+      print('[FirebaseService.initialize] ========================================');
 
       // Inicializar Firebase Core
       await Firebase.initializeApp();
-      print('[FirebaseService.initialize] Firebase Core inicializado');
+      print('[FirebaseService.initialize] ✓ Firebase Core inicializado');
+
+      // IMPORTANTE: Verificar configuración
+      print('[FirebaseService.initialize] ⚠️  CHECKLIST REQUERIDO:');
+      print('[FirebaseService.initialize] ⚠️  1. Realtime Database creada en Firebase Console');
+      print('[FirebaseService.initialize] ⚠️  2. Reglas configuradas (ve a: Build > Realtime Database > Rules)');
+      print('[FirebaseService.initialize] ⚠️  3. Lee el archivo: FIREBASE_SETUP_2026.md');
 
       // Configurar Analytics
       _analytics = FirebaseAnalytics.instance;
       await _analytics.logAppOpen();
-      print('[FirebaseService.initialize] Analytics inicializado');
+      print('[FirebaseService.initialize] ✓ Analytics inicializado');
 
       // Configurar Crashlytics
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
       FlutterError.onError = (errorDetails) {
         FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
       };
-      print('[FirebaseService.initialize] Crashlytics inicializado');
+      print('[FirebaseService.initialize] ✓ Crashlytics inicializado');
 
       // Configurar Cloud Messaging (FCM)
       _messaging = FirebaseMessaging.instance;
@@ -63,11 +71,11 @@ class FirebaseService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('[FirebaseService.initialize] Permiso de notificaciones OTORGADO');
+        print('[FirebaseService.initialize] ✓ Permiso de notificaciones: OTORGADO');
       } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        print('[FirebaseService.initialize] Permiso PROVISIONAL otorgado');
+        print('[FirebaseService.initialize] ⚠️  Permiso de notificaciones: PROVISIONAL');
       } else {
-        print('[FirebaseService.initialize] Permiso de notificaciones DENEGADO');
+        print('[FirebaseService.initialize] ✗ Permiso de notificaciones: DENEGADO');
       }
 
       // Obtener FCM token
@@ -78,10 +86,15 @@ class FirebaseService {
       _setupMessageHandlers();
 
       _isInitialized = true;
-      print('[FirebaseService.initialize] Firebase inicializado exitosamente');
+      print('[FirebaseService.initialize] ========================================');
+      print('[FirebaseService.initialize] ✓ FIREBASE INICIALIZADO EXITOSAMENTE');
+      print('[FirebaseService.initialize] ========================================');
     } catch (e, stackTrace) {
-      print('[FirebaseService.initialize] ERROR: $e');
+      print('[FirebaseService.initialize] ========================================');
+      print('[FirebaseService.initialize] ✗ ERROR AL INICIALIZAR FIREBASE');
+      print('[FirebaseService.initialize] Error: $e');
       print('[FirebaseService.initialize] StackTrace: $stackTrace');
+      print('[FirebaseService.initialize] ========================================');
       rethrow;
     }
   }

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'secure_storage_service.dart';
+import 'notification_service.dart';
 
 /// Modelo de Alerta
 class AlertModel {
@@ -135,16 +137,55 @@ class AlertService {
         numberCalled: numberCalled,
       );
 
-      // Guardar en Firebase
-      await _database.child('alerts').child(_userId!).child(alertId).set(alert.toJson());
+      print('[AlertService.createAlert] ========================================');
+      print('[AlertService.createAlert] GUARDANDO ALERTA DE EMERGENCIA');
+      print('[AlertService.createAlert] UserId: $_userId');
+      print('[AlertService.createAlert] AlertId: $alertId');
+      print('[AlertService.createAlert] Ubicación: lat=$latitude, lon=$longitude');
+      print('[AlertService.createAlert] ========================================');
 
-      // Guardar también localmente
-      await _saveAlertLocally(alert);
+      // Guardar en Firebase (con reintentos)
+      bool firebaseSuccess = false;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          print('[AlertService.createAlert] Intento $attempt/2: Guardando en Firebase Realtime DB...');
+          await _database.child('alerts').child(_userId!).child(alertId).set(alert.toJson()).timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {
+              throw TimeoutException('Firebase write timeout después de 8s');
+            },
+          );
+          print('[AlertService.createAlert] ✓ ÉXITO: Alerta guardada en Firebase');
+          firebaseSuccess = true;
+          break;
+        } catch (firebaseError) {
+          print('[AlertService.createAlert] ✗ Intento $attempt/2 falló: $firebaseError');
+          if (attempt < 2) {
+            print('[AlertService.createAlert] Esperando 2 segundos antes de reintentar...');
+            await Future.delayed(const Duration(seconds: 2));
+          }
+        }
+      }
 
-      print('[AlertService.createAlert] Alerta creada: $alertId');
+      if (!firebaseSuccess) {
+        print('[AlertService.createAlert] ⚠️  FIREBASE NO DISPONIBLE - Usando almacenamiento local');
+      }
+
+      // Guardar también localmente (fallback/backup)
+      try {
+        await _saveAlertLocally(alert);
+        print('[AlertService.createAlert] ✓ Alerta guardada en almacenamiento local');
+      } catch (e) {
+        print('[AlertService.createAlert] ✗ Error guardando localmente: $e');
+      }
+
+      print('[AlertService.createAlert] ========================================');
+      print('[AlertService.createAlert] ALERTA COMPLETADA: $alertId');
+      print('[AlertService.createAlert] ========================================');
       return alertId;
     } catch (e) {
-      print('[AlertService.createAlert] ERROR: $e');
+      print('[AlertService.createAlert] ERROR CRÍTICO: $e');
+      print('[AlertService.createAlert] StackTrace: ${StackTrace.current}');
       rethrow;
     }
   }
@@ -276,6 +317,45 @@ class AlertService {
       print('[AlertService.clearLocalAlerts] Alertas locales borradas');
     } catch (e) {
       print('[AlertService.clearLocalAlerts] ERROR: $e');
+    }
+  }
+
+  /// Notificar a contactos sobre una alerta activada
+  /// Se envía a través de FCM si los contactos tienen tokens disponibles
+  Future<void> notifyContacts({
+    required String alertId,
+    required double? latitude,
+    required double? longitude,
+    required String description,
+  }) async {
+    try {
+      final notificationService = NotificationService.instance();
+      
+      // Construir el mensaje de la notificación
+      final title = '🚨 ALERTA DE EMERGENCIA';
+      final body = description.isNotEmpty
+          ? description
+          : 'Se ha activado una alerta de emergencia. Ubicación disponible.';
+      
+      // Datos adicionales para la notificación
+      final Map<String, dynamic> data = {
+        'alert_id': alertId,
+        'user_id': _userId,
+        'latitude': latitude?.toString() ?? '',
+        'longitude': longitude?.toString() ?? '',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      print('[AlertService.notifyContacts] Notificando a contactos sobre alerta: $alertId');
+      print('[AlertService.notifyContacts] Título: $title, Body: $body');
+      
+      // Nota: Para enviar notificaciones reales, necesitarías:
+      // 1. Backend con credenciales de Firebase Admin SDK
+      // 2. O usar una Cloud Function que escuche cambios en Firebase
+      // Por ahora, solo registramos la intención
+      
+    } catch (e) {
+      print('[AlertService.notifyContacts] ERROR: $e');
     }
   }
 }

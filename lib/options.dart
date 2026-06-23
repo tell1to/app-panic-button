@@ -11,6 +11,8 @@ import 'symptoms.dart';
 import 'documents.dart';
 import 'services/alert_service.dart';
 import 'services/secure_storage_service.dart';
+import 'services/appointment_reminder_service.dart';
+import 'validators/validators.dart';
 
 class OptionsPage extends StatefulWidget {
   const OptionsPage({super.key});
@@ -27,7 +29,7 @@ class _OptionsPageState extends State<OptionsPage> {
   // Listas para condiciones médicas, medicamentos, citas médicas y alergias
   List<Map<String, String>> _conditions = [];
   List<String> _medications = [];
-  List<Map<String, String>> _appointments = [];
+  List<Map<String, dynamic>> _appointments = [];
   List<String> _allergies = [];
   
   // Historial de alertas
@@ -606,8 +608,15 @@ class _OptionsPageState extends State<OptionsPage> {
       if (data != null) {
         final List<dynamic> list = jsonDecode(data);
         setState(() {
-          _appointments = list.map((e) => Map<String, String>.from(e as Map)).toList();
+          _appointments = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         });
+        
+        // Sincronizar recordatorios cuando se cargan las citas
+        try {
+          await AppointmentReminderService.instance().refreshReminders(_appointments);
+        } catch (e) {
+          print('[options] Error sincronizando recordatorios: $e');
+        }
       }
     } catch (e) {
       // ignore
@@ -620,6 +629,37 @@ class _OptionsPageState extends State<OptionsPage> {
       await prefs.setString('appointments', jsonEncode(_appointments));
     } catch (e) {
       // ignore
+    }
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(color: Colors.black87),
+        ),
+      ],
+    );
+  }
+
+  String _formatAlertMinutes(int minutes) {
+    if (minutes < 60) {
+      return '$minutes minutos antes';
+    } else if (minutes < 1440) {
+      final hours = minutes ~/ 60;
+      return '$hours ${hours == 1 ? 'hora' : 'horas'} antes';
+    } else if (minutes < 2880) {
+      return '1 día antes';
+    } else {
+      final days = minutes ~/ 1440;
+      return '$days días antes';
     }
   }
 
@@ -697,23 +737,44 @@ class _OptionsPageState extends State<OptionsPage> {
       builder: (ctx) {
         final TextEditingController diagnosisController = TextEditingController(text: initialDiagnosis ?? '');
         final TextEditingController sinceController = TextEditingController(text: initialSince ?? '');
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Condición Médica'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
+        return StatefulBuilder(
+          builder: (context, setState) {
+            String? diagnosisError;
+            String? sinceError;
+
+            void validateFields() {
+              diagnosisError = null;
+              sinceError = null;
+
+              if (!Validators.isNotEmpty(diagnosisController.text)) {
+                diagnosisError = 'Por favor, describe tu condición médica';
+              }
+
+              if (!Validators.isNotEmpty(sinceController.text)) {
+                sinceError = 'Por favor, selecciona una fecha';
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: const Text('Condición Médica'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                 Text('Describe tu condición médica principal', style: TextStyle(color: Theme.of(ctx).textTheme.bodySmall?.color)),
                 const SizedBox(height: 16),
                 TextField(
                   controller: diagnosisController,
                   maxLines: 3,
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: 'Describe tu condición médica...',
                     filled: true,
                     fillColor: Colors.grey.shade100,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    errorText: diagnosisError,
+                    errorMaxLines: 2,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -722,12 +783,15 @@ class _OptionsPageState extends State<OptionsPage> {
                 TextField(
                   controller: sinceController,
                   readOnly: true,
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: 'dd/mm/aaaa',
                     filled: true,
                     fillColor: Colors.grey.shade100,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                     suffixIcon: const Icon(Icons.calendar_today),
+                    errorText: sinceError,
+                    errorMaxLines: 2,
                   ),
                   onTap: () async {
                     final DateTime? picked = await showDatePicker(
@@ -738,6 +802,7 @@ class _OptionsPageState extends State<OptionsPage> {
                     );
                     if (picked != null) {
                       sinceController.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                      setState(() {});
                     }
                   },
                 ),
@@ -746,13 +811,23 @@ class _OptionsPageState extends State<OptionsPage> {
           ),
           actions: <Widget>[
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
-            ElevatedButton(onPressed: () {
-              Navigator.of(ctx).pop({
-                'diagnosis': diagnosisController.text.trim(),
-                'since': sinceController.text.trim(),
-              });
-            }, child: const Text('Guardar')),
+            ElevatedButton(
+              onPressed: () {
+                validateFields();
+                if (diagnosisError == null && sinceError == null) {
+                  Navigator.of(ctx).pop({
+                    'diagnosis': diagnosisController.text.trim(),
+                    'since': sinceController.text.trim(),
+                  });
+                } else {
+                  setState(() {});
+                }
+              },
+              child: const Text('Guardar'),
+            ),
           ],
+            );
+          },
         );
       },
     );
@@ -982,85 +1057,212 @@ class _OptionsPageState extends State<OptionsPage> {
                               Text(_appointments[i]['specialty'] ?? ''),
                               const SizedBox(height: 6),
                               Text(_appointments[i]['date'] ?? '', style: const TextStyle(color: Colors.black54)),
+                              Text(_appointments[i]['time'] ?? '', style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                              Text('🔔 ${_formatAlertMinutes((_appointments[i]['alertMinutes'] as int?) ?? 1440)}', style: const TextStyle(color: Colors.green, fontSize: 11)),
                             ],
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextButton(
-                                onPressed: () async {
-                                  final result = await showDialog<Map<String, String>>(
-                                    context: context,
-                                    builder: (dctx) {
-                                      final TextEditingController nameCtrl = TextEditingController(text: _appointments[i]['name']);
-                                      final TextEditingController specCtrl = TextEditingController(text: _appointments[i]['specialty']);
-                                      final TextEditingController dateCtrl = TextEditingController(text: _appointments[i]['date']);
-                                      return AlertDialog(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        title: const Text('Editar cita'),
-                                        content: SingleChildScrollView(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (String value) async {
+                              if (value == 'edit') {
+                                // Crear controladores una sola vez para el diálogo
+                                final nameCtrl = TextEditingController(text: _appointments[i]['name']);
+                                final specCtrl = TextEditingController(text: _appointments[i]['specialty']);
+                                final dateCtrl = TextEditingController(text: _appointments[i]['date']);
+                                final timeCtrl = TextEditingController(text: _appointments[i]['time'] ?? '');
+                                final detailCtrl = TextEditingController(text: _appointments[i]['detail'] ?? '');
+                                int selectedAlertMinutes = (_appointments[i]['alertMinutes'] as int?) ?? 1440;
+                                
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (dctx) {
+                                    return StatefulBuilder(
+                                      builder: (context, setStateDialog) {
+                                        
+                                        return ConstrainedBox(
+                                          constraints: BoxConstraints(maxHeight: MediaQuery.of(dctx).size.height * 0.7),
+                                          child: AlertDialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            title: const Text('Editar cita'),
+                                            content: SingleChildScrollView(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
                                             children: <Widget>[
-                                              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre')),
-                                              const SizedBox(height: 8),
-                                              TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad')),
-                                              const SizedBox(height: 8),
-                                              TextField(
-                                                controller: dateCtrl,
-                                                readOnly: true,
-                                                decoration: const InputDecoration(labelText: 'Fecha'),
-                                                onTap: () async {
-                                                  final DateTime? picked = await showDatePicker(
-                                                    context: dctx,
-                                                    initialDate: DateTime.now(),
-                                                    firstDate: DateTime(1900),
-                                                    lastDate: DateTime(2100),
-                                                  );
-                                                  if (picked != null) {
-                                                    dateCtrl.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                                              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre', isDense: true)),
+                                              const SizedBox(height: 12),
+                                                  TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad', isDense: true)),
+                                                  const SizedBox(height: 12),
+                                                  TextField(
+                                                    controller: dateCtrl,
+                                                    readOnly: true,
+                                                    decoration: const InputDecoration(labelText: 'Fecha', isDense: true),
+                                                    onTap: () async {
+                                                      final DateTime? picked = await showDatePicker(
+                                                        context: dctx,
+                                                        initialDate: DateTime.now(),
+                                                        firstDate: DateTime.now(),
+                                                        lastDate: DateTime(2100),
+                                                      );
+                                                      if (picked != null) {
+                                                        dateCtrl.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                                                      }
+                                                    },
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  TextField(
+                                                    controller: timeCtrl,
+                                                    readOnly: true,
+                                                    decoration: const InputDecoration(labelText: 'Hora', isDense: true),
+                                                    onTap: () async {
+                                                      final TimeOfDay? picked = await showTimePicker(
+                                                        context: dctx,
+                                                        initialTime: TimeOfDay.now(),
+                                                      );
+                                                      if (picked != null) {
+                                                        timeCtrl.text = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                                      }
+                                                    },
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  TextField(controller: detailCtrl, decoration: const InputDecoration(labelText: 'Detalle (Opcional)', isDense: true), maxLines: 3),
+                                                  const SizedBox(height: 12),
+                                                  DropdownButtonFormField<int>(
+                                                    value: selectedAlertMinutes,
+                                                    decoration: const InputDecoration(labelText: 'Recibir alerta', isDense: true),
+                                                    items: [
+                                                      const DropdownMenuItem(value: 5, child: Text('5 minutos antes')),
+                                                      const DropdownMenuItem(value: 60, child: Text('1 hora antes')),
+                                                      const DropdownMenuItem(value: 240, child: Text('4 horas antes')),
+                                                      const DropdownMenuItem(value: 1440, child: Text('24 horas antes')),
+                                                      const DropdownMenuItem(value: 2880, child: Text('2 días antes')),
+                                                    ],
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        setStateDialog(() => selectedAlertMinutes = value);
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              TextButton(onPressed: () => Navigator.of(dctx).pop(), child: const Text('Cancelar')),
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  // Validar que todos los campos estén completos
+                                                  if (nameCtrl.text.trim().isEmpty || 
+                                                      specCtrl.text.trim().isEmpty ||
+                                                      dateCtrl.text.trim().isEmpty ||
+                                                      timeCtrl.text.trim().isEmpty) {
+                                                    ScaffoldMessenger.of(dctx).showSnackBar(
+                                                      const SnackBar(content: Text('Por favor completa todos los campos')),
+                                                    );
+                                                    return;
                                                   }
+                                                  // Actualizar la cita
+                                                  setState(() {
+                                                    _appointments[i] = {
+                                                      'name': nameCtrl.text.trim(),
+                                                      'specialty': specCtrl.text.trim(),
+                                                      'date': dateCtrl.text.trim(),
+                                                      'time': timeCtrl.text.trim(),
+                                                      'detail': detailCtrl.text.trim(),
+                                                      'alertMinutes': selectedAlertMinutes,
+                                                    };
+                                                  });
+                                                  await _saveAppointments();
+                                                  Navigator.of(dctx).pop();
                                                 },
+                                                child: const Text('Guardar'),
                                               ),
                                             ],
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          TextButton(onPressed: () => Navigator.of(dctx).pop(), child: const Text('Cancelar')),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.of(dctx).pop({
-                                                'name': nameCtrl.text.trim(),
-                                                'specialty': specCtrl.text.trim(),
-                                                'date': dateCtrl.text.trim(),
-                                              });
-                                            },
-                                            child: const Text('Guardar'),
-                                          ),
-                                        ],
+                                            ),
+                                          );
+                                        },
                                       );
                                     },
                                   );
-                                  if (result != null) {
-                                    if (!mounted) return;
-                                    setState(() {
-                                      _appointments[i] = result;
-                                    });
-                                    this.setState(() {});
-                                    await _saveAppointments();
-                                  }
-                                },
-                                child: const Text('Editar', style: TextStyle(color: Colors.blue)),
+                              } else if (value == 'delete') {
+                                final appointmentToDelete = _appointments[i];
+                                setState(() {
+                                  _appointments.removeAt(i);
+                                });
+                                await _saveAppointments();
+                                
+                                // Cancelar recordatorio de la cita eliminada
+                                try {
+                                  final appointmentId = 'cita_${appointmentToDelete['name']}_${appointmentToDelete['date']}';
+                                  AppointmentReminderService.instance().cancelAppointmentReminder(appointmentId);
+                                  print('[options] Recordatorio cancelado para cita: $appointmentId');
+                                } catch (e) {
+                                  print('[options] Error cancelando recordatorio: $e');
+                                }
+                              } else if (value == 'view') {
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (dctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    title: const Text('Detalles de la Cita'),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildDetailRow('Especialista:', _appointments[i]['name'] ?? ''),
+                                          const SizedBox(height: 12),
+                                          _buildDetailRow('Especialidad:', _appointments[i]['specialty'] ?? ''),
+                                          const SizedBox(height: 12),
+                                          _buildDetailRow('Fecha:', _appointments[i]['date'] ?? ''),
+                                          const SizedBox(height: 12),
+                                          _buildDetailRow('Hora:', _appointments[i]['time'] ?? ''),
+                                          const SizedBox(height: 12),
+                                          _buildDetailRow('Alerta:', _formatAlertMinutes((_appointments[i]['alertMinutes'] as int?) ?? 1440)),
+                                          if ((_appointments[i]['detail'] ?? '').isNotEmpty) ...[
+                                            const SizedBox(height: 12),
+                                            _buildDetailRow('Detalle:', _appointments[i]['detail'] ?? ''),
+                                          ]
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(dctx).pop(),
+                                        child: const Text('Cerrar'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 18, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Editar'),
+                                  ],
+                                ),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _appointments.removeAt(i);
-                                  });
-                                  this.setState(() {});
-                                  _saveAppointments();
-                                },
-                                child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete, size: 18, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text('Eliminar'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'view',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.visibility, size: 18, color: Colors.green),
+                                    SizedBox(width: 8),
+                                    Text('Ver Detalles'),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -1069,64 +1271,159 @@ class _OptionsPageState extends State<OptionsPage> {
                   const SizedBox(height: 8),
                   OutlinedButton(
                     onPressed: () async {
-                      final result = await showDialog<Map<String, String>>(
+                      // Crear controladores una sola vez para el diálogo
+                      final nameCtrl = TextEditingController();
+                      final specCtrl = TextEditingController();
+                      final dateCtrl = TextEditingController();
+                      final timeCtrl = TextEditingController();
+                      final detailCtrl = TextEditingController();
+                      int selectedAlertMinutes = 1440; // Por defecto 24 horas
+                      
+                      showDialog<void>(
                         context: context,
                         builder: (dctx) {
-                          final TextEditingController nameCtrl = TextEditingController();
-                          final TextEditingController specCtrl = TextEditingController();
-                          final TextEditingController dateCtrl = TextEditingController();
-                          return AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            title: const Text('Agregar cita'),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre')),
-                                  const SizedBox(height: 8),
-                                  TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad')),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    controller: dateCtrl,
-                                    readOnly: true,
-                                    decoration: const InputDecoration(labelText: 'Fecha'),
-                                    onTap: () async {
-                                      final DateTime? picked = await showDatePicker(
-                                        context: dctx,
-                                        initialDate: DateTime.now(),
-                                        firstDate: DateTime(1900),
-                                        lastDate: DateTime(2100),
-                                      );
-                                      if (picked != null) {
-                                        dateCtrl.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-                                      }
-                                    },
-                                  ),
-                                ],
+                          return StatefulBuilder(
+                            builder: (context, setStateDialog) {
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(maxHeight: MediaQuery.of(dctx).size.height * 0.7),
+                                child: AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  title: const Text('Agregar cita'),
+                                  content: SingleChildScrollView(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre', isDense: true)),
+                                        const SizedBox(height: 12),
+                                    TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad', isDense: true)),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: dateCtrl,
+                                      readOnly: true,
+                                      decoration: const InputDecoration(labelText: 'Fecha (Hoy o Futuro)', isDense: true),
+                                      onTap: () async {
+                                        final DateTime? picked = await showDatePicker(
+                                          context: dctx,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime.now(),
+                                          lastDate: DateTime(2100),
+                                        );
+                                        if (picked != null) {
+                                          dateCtrl.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: timeCtrl,
+                                      readOnly: true,
+                                      decoration: const InputDecoration(labelText: 'Hora', isDense: true),
+                                      onTap: () async {
+                                        final TimeOfDay? picked = await showTimePicker(
+                                          context: dctx,
+                                          initialTime: TimeOfDay.now(),
+                                        );
+                                        if (picked != null) {
+                                          timeCtrl.text = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(controller: detailCtrl, decoration: const InputDecoration(labelText: 'Detalle (Opcional)', isDense: true), maxLines: 3),
+                                    const SizedBox(height: 12),
+                                    DropdownButtonFormField<int>(
+                                      value: selectedAlertMinutes,
+                                      decoration: const InputDecoration(labelText: 'Recibir alerta', isDense: true),
+                                      items: [
+                                        const DropdownMenuItem(value: 5, child: Text('5 minutos antes')),
+                                        const DropdownMenuItem(value: 60, child: Text('1 hora antes')),
+                                        const DropdownMenuItem(value: 240, child: Text('4 horas antes')),
+                                        const DropdownMenuItem(value: 1440, child: Text('24 horas antes')),
+                                        const DropdownMenuItem(value: 2880, child: Text('2 días antes')),
+                                      ],
+                                      onChanged: (value) {
+                                        if (value != null) {
+                                          setStateDialog(() => selectedAlertMinutes = value);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                             actions: <Widget>[
                               TextButton(onPressed: () => Navigator.of(dctx).pop(), child: const Text('Cancelar')),
                               ElevatedButton(
-                                onPressed: () {
-                                  Navigator.of(dctx).pop({
+                                onPressed: () async {
+                                  // Validar que todos los campos estén completos
+                                  if (nameCtrl.text.trim().isEmpty || 
+                                      specCtrl.text.trim().isEmpty ||
+                                      dateCtrl.text.trim().isEmpty ||
+                                      timeCtrl.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(dctx).showSnackBar(
+                                      const SnackBar(content: Text('Por favor completa todos los campos')),
+                                    );
+                                    return;
+                                  }
+                                  // Agregar la cita
+                                  final newAppointment = {
                                     'name': nameCtrl.text.trim(),
                                     'specialty': specCtrl.text.trim(),
                                     'date': dateCtrl.text.trim(),
-                                  });
+                                    'time': timeCtrl.text.trim(),
+                                    'detail': detailCtrl.text.trim(),
+                                    'alertMinutes': selectedAlertMinutes,
+                                  };
+                                  print('[options] Guardando nueva cita: $newAppointment');
+                                  setState(() => _appointments.add(newAppointment));
+                                  await _saveAppointments();
+                                  print('[options] Cita guardada en preferencias');
+                                  
+                                  // Programar recordatorio automático para la cita
+                                  try {
+                                    final appointmentId = 'cita_${newAppointment['name']}_${newAppointment['date']}';
+                                    print('[options] Iniciando programación de recordatorio: $appointmentId');
+                                    
+                                    // Convertir fecha (DD/MM/YYYY) y hora (HH:MM) a DateTime
+                                    final dateParts = ((newAppointment['date'] as String?) ?? '').split('/');
+                                    final timeParts = ((newAppointment['time'] as String?) ?? '00:00').split(':');
+                                    
+                                    if (dateParts.length == 3 && timeParts.length == 2) {
+                                      final day = int.tryParse(dateParts[0]) ?? 1;
+                                      final month = int.tryParse(dateParts[1]) ?? 1;
+                                      final year = int.tryParse(dateParts[2]) ?? 2025;
+                                      final hour = int.tryParse(timeParts[0]) ?? 0;
+                                      final minute = int.tryParse(timeParts[1]) ?? 0;
+                                      
+                                      final appointmentDateTime = DateTime(year, month, day, hour, minute);
+                                      print('[options] Fecha/Hora de cita: $appointmentDateTime');
+                                      
+                                      print('[options] Llamando a scheduleAppointmentReminder con minutesBeforeReminder=$selectedAlertMinutes');
+                                      await AppointmentReminderService.instance().scheduleAppointmentReminder(
+                                        appointmentId: appointmentId,
+                                        appointmentDateTime: appointmentDateTime,
+                                        doctorName: (newAppointment['name'] as String?) ?? 'Médico',
+                                        appointmentDate: (newAppointment['date'] as String?) ?? '',
+                                        appointmentTime: (newAppointment['time'] as String?) ?? '',
+                                        minutesBeforeReminder: selectedAlertMinutes,
+                                      );
+                                      print('[options] ✅ Recordatorio programado para cita: $appointmentId');
+                                    } else {
+                                      print('[options] ❌ Formato de fecha/hora inválido: ${newAppointment['date']} ${newAppointment['time']}');
+                                    }
+                                  } catch (e) {
+                                    print('[options] ❌ Error programando recordatorio: $e');
+                                  }
+                                  Navigator.of(dctx).pop();
                                 },
                                 child: const Text('Agregar'),
                               ),
                             ],
+                            ),
+                          );
+                            },
                           );
                         },
                       );
-                      if (result != null) {
-                        if (!mounted) return;
-                        setState(() => _appointments.add(result));
-                        this.setState(() {});
-                        await _saveAppointments();
-                      }
                     },
                     child: const Text('+ Agregar cita'),
                   ),

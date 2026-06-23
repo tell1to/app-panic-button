@@ -266,6 +266,20 @@ class _InicioPageState extends State<InicioPage> {
       'has_location': _lastLocation != null,
     });
     
+    // Decidir qué número llamar ANTES de crear la alerta
+    String numberToCall = '911';
+    if (_mainFavoriteIndex == 1) {
+      if (_preferredContact != null && (_preferredContact!['telefono']?.isNotEmpty ?? false)) {
+        numberToCall = _preferredContact!['telefono']!;
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));
+        numberToCall = '911';
+      }
+    }
+    
+    print('[main._activateEmergency] Número a llamar: $numberToCall');
+    
     // Crear alerta en Firebase
     try {
       // Obtener CI del usuario desde secure storage
@@ -277,7 +291,7 @@ class _InicioPageState extends State<InicioPage> {
         longitude: _lastLocation?.longitude,
         contactsNotified: [],
         description: 'Alerta de pánico activada',
-        numberCalled: '',
+        numberCalled: numberToCall,
       );
       
       print('[main._activateEmergency] Alerta guardada en Firebase con ID: $alertId');
@@ -317,20 +331,6 @@ class _InicioPageState extends State<InicioPage> {
     } catch (e) {
       print('[main._activateEmergency] ERROR al llamar addAlert: $e');
       print('[main._activateEmergency] Stack trace: ${StackTrace.current}');
-    }
-    
-    // Decide based on which small button is selected
-    String numberToCall = '911';
-    if (_mainFavoriteIndex == 1) {
-      if (_preferredContact != null && (_preferredContact!['telefono']?.isNotEmpty ?? false)) {
-        numberToCall = _preferredContact!['telefono']!;
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));
-        numberToCall = '911';
-      }
-    } else {
-      numberToCall = '911';
     }
     
     print('[main._activateEmergency] Llamando al número: $numberToCall');
