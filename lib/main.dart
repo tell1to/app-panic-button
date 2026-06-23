@@ -12,6 +12,8 @@ import 'validators/validators.dart';
 import 'services/rate_limiter.dart';
 import 'services/firebase_service.dart';
 import 'services/alert_service.dart';
+import 'services/notification_service.dart';
+import 'services/appointment_reminder_service.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -29,6 +31,24 @@ void main() async {
     // Continuar igualmente si Firebase no se inicializa
   }
   
+  // Inicializar servicio de notificaciones (FCM)
+  try {
+    await NotificationService.instance().initialize();
+    print('[main] NotificationService inicializado correctamente');
+  } catch (e) {
+    print('[main] ERROR al inicializar NotificationService: $e');
+    // Continuar igualmente si FCM no se inicializa
+  }
+  
+  // Inicializar servicio de recordatorios de citas médicas
+  try {
+    await AppointmentReminderService.instance().initialize();
+    print('[main] AppointmentReminderService inicializado correctamente');
+  } catch (e) {
+    print('[main] ERROR al inicializar AppointmentReminderService: $e');
+    // Continuar igualmente si el servicio no se inicializa
+  }
+  
   runApp(const MyApp());
 }
 class MyApp extends StatelessWidget {
@@ -41,6 +61,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
+      navigatorKey: NotificationService.navigatorKey,
       home: const HomeScreen(),
     );
   }
@@ -251,7 +272,7 @@ class _InicioPageState extends State<InicioPage> {
       // Si no hay CI configurado, usará 'user_default'
       await AlertService.instance.initializeFromStorage();
       
-      await AlertService.instance.createAlert(
+      final alertId = await AlertService.instance.createAlert(
         latitude: _lastLocation?.latitude,
         longitude: _lastLocation?.longitude,
         contactsNotified: [],
@@ -259,7 +280,17 @@ class _InicioPageState extends State<InicioPage> {
         numberCalled: '',
       );
       
-      print('[main._activateEmergency] Alerta guardada en Firebase');
+      print('[main._activateEmergency] Alerta guardada en Firebase con ID: $alertId');
+      
+      // Notificar a los contactos de emergencia
+      await AlertService.instance.notifyContacts(
+        alertId: alertId,
+        latitude: _lastLocation?.latitude,
+        longitude: _lastLocation?.longitude,
+        description: 'Alerta de pánico activada - Se necesita ayuda inmediata',
+      );
+      
+      print('[main._activateEmergency] Contactos notificados sobre la alerta');
     } catch (e) {
       print('[main._activateEmergency] ERROR al guardar alerta: $e');
       FirebaseService.instance.recordError(e, StackTrace.current, reason: 'Error al guardar alerta en Firebase');
@@ -314,10 +345,20 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   // Nueva función para obtener ubicación
-  Future<void> _obtenerUbicacion() async {
+  Future<void> _obtenerUbicacion({bool mostrarError = true}) async {
+    print('[_obtenerUbicacion] iniciando obtención de ubicación...');
+    
+    if (mounted) {
+      setState(() {
+        _ubicacionCargando = true;
+        _ciudad = 'Obteniendo...';
+      });
+    }
+    
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        print('[_obtenerUbicacion] servicio de ubicación deshabilitado');
         if (mounted) {
           setState(() {
             _ciudad = 'Servicio deshabilitado';
@@ -329,8 +370,13 @@ class _InicioPageState extends State<InicioPage> {
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
+      print('[_obtenerUbicacion] permiso actual: $permission');
+      
       if (permission == LocationPermission.denied) {
+        print('[_obtenerUbicacion] solicitando permiso...');
         permission = await Geolocator.requestPermission();
+        print('[_obtenerUbicacion] permiso después de solicitud: $permission');
+        
         if (permission == LocationPermission.denied) {
           if (mounted) {
             setState(() {
@@ -344,6 +390,7 @@ class _InicioPageState extends State<InicioPage> {
       }
 
       if (permission == LocationPermission.deniedForever) {
+        print('[_obtenerUbicacion] permisos negados permanentemente');
         if (mounted) {
           setState(() {
             _ciudad = 'Sin permisos';
@@ -354,33 +401,66 @@ class _InicioPageState extends State<InicioPage> {
         return;
       }
 
+      print('[_obtenerUbicacion] obteniendo posición GPS...');
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
       );
+      
+      print('[_obtenerUbicacion] posición obtenida: ${position.latitude}, ${position.longitude}');
       
       // Guardar la ubicación
       _lastLocation = position;
 
+      print('[_obtenerUbicacion] obteniendo información de ubicación...');
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
 
-      if (placemarks.isNotEmpty && mounted) {
+      if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        setState(() {
-          _ciudad = place.locality ?? place.subAdministrativeArea ?? 'Desconocida';
-          _pais = place.country ?? '';
-          _ubicacionCargando = false;
-        });
+        print('[_obtenerUbicacion] placemark: ciudad=${place.locality}, país=${place.country}');
+        
+        if (mounted) {
+          setState(() {
+            _ciudad = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Ubicación desconocida';
+            _pais = place.country ?? '';
+            _ubicacionCargando = false;
+          });
+        }
+        print('[_obtenerUbicacion] ubicación actualizada correctamente: $_ciudad, $_pais');
+      } else {
+        print('[_obtenerUbicacion] sin placemarks disponibles');
+        if (mounted) {
+          setState(() {
+            _ciudad = 'Ubicación desconocida';
+            _pais = '';
+            _ubicacionCargando = false;
+          });
+        }
       }
     } catch (e) {
+      print('[_obtenerUbicacion] ERROR: $e');
+      print('[_obtenerUbicacion] stack trace: ${StackTrace.current}');
+      
       if (mounted) {
         setState(() {
-          _ciudad = 'Error de ubicación';
+          _ciudad = 'Error obteniendo ubicación';
           _pais = '';
           _ubicacionCargando = false;
         });
+        
+        // Mostrar notificación de error si es solicitado
+        if (mostrarError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al obtener ubicación: $e'),
+              duration: const Duration(seconds: 3),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       }
     }
   }
@@ -404,7 +484,7 @@ class _InicioPageState extends State<InicioPage> {
     super.initState();
     
     // Obtener ubicación al iniciar
-    _obtenerUbicacion();
+    _obtenerUbicacion(mostrarError: false);
     
     // Cargar información del rate limit
     _updateRateLimitInfo();
@@ -492,41 +572,62 @@ class _InicioPageState extends State<InicioPage> {
         Expanded(
           child: SizedBox(
             height: cardHeight,
-            child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Icon(Icons.location_on, color: Colors.blue, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Ubicación',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: (cardHeight * 0.12).clamp(14.0, 16.0),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Mostrar ubicacion en una sola línea para evitar overflow
-                    _ubicacionCargando
-                        ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(
-                            _pais.isNotEmpty ? '$_ciudad, $_pais' : _ciudad,
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: (cardHeight * 0.1).clamp(11.0, 13.0),
-                              fontWeight: FontWeight.w600,
+            child: GestureDetector(
+              onTap: () {
+                print('[_buildInfoCards] tap en tarjeta de ubicación');
+                _obtenerUbicacion(mostrarError: true);
+              },
+              child: Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(Icons.location_on, color: Colors.blue, size: (cardHeight * 0.3).clamp(28.0, 36.0)),
+                          if (_ubicacionCargando)
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: SizedBox(
+                                width: (cardHeight * 0.15).clamp(12.0, 16.0),
+                                height: (cardHeight * 0.15).clamp(12.0, 16.0),
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                ),
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ubicación',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: (cardHeight * 0.12).clamp(14.0, 16.0),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _pais.isNotEmpty ? '$_ciudad, $_pais' : _ciudad,
+                        style: TextStyle(
+                          color: _ciudad == 'Obteniendo...' ? Colors.orange : Colors.black87,
+                          fontSize: (cardHeight * 0.09).clamp(10.0, 12.0),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
