@@ -27,6 +27,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
   static const String _profileLastKey = 'profile_apellidos';
   static const String _profileAgeKey = 'profile_edad';
   static const String _profileDiseasesKey = 'profile_enfermedades';
+  static const String _profileBloodTypeKey = 'profile_blood_type';
+  static const String _profileOtherDiseaseKey = 'profile_other_disease';
 
   // Variables del perfil
   String _ci = "";
@@ -34,9 +36,15 @@ class _SenttingsPageState extends State<SenttingsPage> {
   String _apellidos = "";
   String _edad = "";
   List<String> _enfermedades = [];
+  String _tipoSangre = "";
+  String _otraEnfermedad = "";
 
   final List<String> enfermedadesCatastroficas = [
     'Cáncer', 'Insuficiencia renal', 'Cardiopatía grave', 'Esclerosis múltiple', 'Trasplante de órganos'
+  ];
+
+  final List<String> tiposSangre = [
+    'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'
   ];
 
   // Contactos
@@ -59,6 +67,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
       final apellidos = sp.getString(_profileLastKey) ?? '';
       final edad = sp.getString(_profileAgeKey) ?? '';
       final enfermedades = sp.getStringList(_profileDiseasesKey) ?? [];
+      final tipoSangre = sp.getString(_profileBloodTypeKey) ?? '';
+      final otraEnfermedad = sp.getString(_profileOtherDiseaseKey) ?? '';
       final ci = await SecureStorageService.getCI() ?? '';
       if (!mounted) return;
       setState(() {
@@ -67,6 +77,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
         _apellidos = apellidos;
         _edad = edad;
         _enfermedades = List<String>.from(enfermedades);
+        _tipoSangre = tipoSangre;
+        _otraEnfermedad = otraEnfermedad;
       });
     } catch (_) {}
   }
@@ -78,6 +90,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
       await sp.setString(_profileLastKey, _apellidos);
       await sp.setString(_profileAgeKey, _edad);
       await sp.setStringList(_profileDiseasesKey, _enfermedades);
+      await sp.setString(_profileBloodTypeKey, _tipoSangre);
+      await sp.setString(_profileOtherDiseaseKey, _otraEnfermedad);
       await SecureStorageService.saveUserProfile(
         ci: _ci,
         firstName: _nombres,
@@ -148,6 +162,14 @@ class _SenttingsPageState extends State<SenttingsPage> {
 
   bool _esEdadValida(String edad) {
     return Validators.isValidAge(edad);
+  }
+
+  String _generarListaEnfermedades() {
+    List<String> listaCompleta = List.from(_enfermedades);
+    if (_otraEnfermedad.isNotEmpty) {
+      listaCompleta.add(_otraEnfermedad);
+    }
+    return listaCompleta.isEmpty ? "Ninguna" : listaCompleta.join(", ");
   }
 
   // --- Contactos ---
@@ -284,7 +306,14 @@ class _SenttingsPageState extends State<SenttingsPage> {
     final nombresController = TextEditingController(text: _nombres);
     final apellidosController = TextEditingController(text: _apellidos);
     final edadController = TextEditingController(text: _edad);
+    final otraEnfermedadController = TextEditingController(text: _otraEnfermedad);
+    String tipoSangreSeleccionado = _tipoSangre;
     List<String> enfermedadesSeleccionadas = List.from(_enfermedades);
+    
+    // Si hay una enfermedad personalizada guardada, agregar "Otro" a la lista
+    if (_otraEnfermedad.isNotEmpty && !enfermedadesSeleccionadas.contains('Otro')) {
+      enfermedadesSeleccionadas.add('Otro');
+    }
 
     showDialog(
       context: context,
@@ -343,6 +372,25 @@ class _SenttingsPageState extends State<SenttingsPage> {
                       controller: edadController,
                     ),
                     const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de Sangre',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: tipoSangreSeleccionado.isEmpty ? null : tipoSangreSeleccionado,
+                      items: tiposSangre.map((tipo) {
+                        return DropdownMenuItem<String>(
+                          value: tipo,
+                          child: Text(tipo),
+                        );
+                      }).toList(),
+                      onChanged: (valor) {
+                        if (valor != null) {
+                          tipoSangreSeleccionado = valor;
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     const Text('Enfermedad(es) catastrófica:', style: TextStyle(fontWeight: FontWeight.bold)),
                     ...enfermedadesCatastroficas.map((enfermedad) {
                       return CheckboxListTile(
@@ -360,6 +408,33 @@ class _SenttingsPageState extends State<SenttingsPage> {
                         },
                       );
                     }),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Otro:'),
+                      value: enfermedadesSeleccionadas.contains('Otro'),
+                      onChanged: (checked) {
+                        setDialogState(() {
+                          if (checked == true) {
+                            enfermedadesSeleccionadas.add('Otro');
+                          } else {
+                            enfermedadesSeleccionadas.remove('Otro');
+                          }
+                        });
+                      },
+                    ),
+                    if (enfermedadesSeleccionadas.contains('Otro'))
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, top: 4.0),
+                        child: TextField(
+                          decoration: const InputDecoration(
+                            labelText: 'Especifica la enfermedad',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          controller: otraEnfermedadController,
+                          maxLines: 2,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -375,6 +450,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                     final nombres = nombresController.text.trim();
                     final apellidos = apellidosController.text.trim();
                     final edad = edadController.text.trim();
+                    final otraEnfermedad = otraEnfermedadController.text.trim();
                     final navigator = Navigator.of(context);
 
                     if (ci.isEmpty) {
@@ -401,6 +477,21 @@ class _SenttingsPageState extends State<SenttingsPage> {
                       );
                       return;
                     }
+                    if (enfermedadesSeleccionadas.contains('Otro') && otraEnfermedad.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Por favor especifica la enfermedad en el campo "Otro".'))
+                      );
+                      return;
+                    }
+
+                    // Guardar si "Otro" estaba seleccionado ANTES de removerlo
+                    final otroEstabaMarcado = enfermedadesSeleccionadas.contains('Otro');
+
+                    // Remover "Otro" de la lista de enfermedades
+                    enfermedadesSeleccionadas.remove('Otro');
+                    
+                    // Guardar la enfermedad personalizada solo si "Otro" estaba marcado
+                    final finalOtraEnfermedad = otroEstabaMarcado ? otraEnfermedad : '';
 
                     // Save profile photo if selected
                     if (previewBytes != null) {
@@ -414,6 +505,8 @@ class _SenttingsPageState extends State<SenttingsPage> {
                       _apellidos = apellidos;
                       _edad = edad;
                       _enfermedades = enfermedadesSeleccionadas;
+                      _tipoSangre = tipoSangreSeleccionado;
+                      _otraEnfermedad = finalOtraEnfermedad;
                     });
 
                     // Persist profile data
@@ -466,9 +559,9 @@ class _SenttingsPageState extends State<SenttingsPage> {
                 ),
                 title: const Text('Perfil personal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 subtitle: Text(
-                  _ci.isEmpty && _nombres.isEmpty && _apellidos.isEmpty && _edad.isEmpty && _enfermedades.isEmpty
+                  _ci.isEmpty && _nombres.isEmpty && _apellidos.isEmpty && _edad.isEmpty && _tipoSangre.isEmpty && _enfermedades.isEmpty && _otraEnfermedad.isEmpty
                     ? 'Editar información personal y médica'
-                    : 'CI: $_ci\nNombre: $_nombres\nApellido: $_apellidos\nEdad: $_edad\nEnfermedades: ${_enfermedades.isEmpty ? "Ninguna" : _enfermedades.join(", ")}',
+                    : 'CI: $_ci\nNombre: $_nombres\nApellido: $_apellidos\nEdad: $_edad\nTipo de Sangre: ${_tipoSangre.isEmpty ? "No especificado" : _tipoSangre}\nEnfermedades: ${_generarListaEnfermedades()}',
                   style: const TextStyle(fontSize: 13),
                 ),
                 trailing: TextButton(
