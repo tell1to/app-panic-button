@@ -233,29 +233,17 @@ class _SenttingsPageState extends State<SenttingsPage> {
                 // Normalizar número de teléfono al formato local de Ecuador (0963522505)
                 final telefonoNormalizado = Validators.normalizePhoneNumber(telefono);
 
-                String? previousPhone;
                 if (index == null) {
                   _contactos.add({'nombre': nombre, 'telefono': telefonoNormalizado});
                 } else {
-                  previousPhone = _contactos[index]['telefono'];
                   _contactos[index] = {'nombre': nombre, 'telefono': telefonoNormalizado};
                 }
 
                 await _saveContacts();
 
-                // Guardar número de teléfono de forma segura si es el primer contacto
-                if (index == null && _contactos.length == 1) {
-                  await setPreferredContact({'nombre': nombre, 'telefono': telefonoNormalizado});
-                  await SecureStorageService.saveEmergencyContact(nombre, telefonoNormalizado);
-                  try {
-                    final sp = await SharedPreferences.getInstance();
-                    await sp.setInt('main_favorite_index', 1);
-                  } catch (_) {}
-                }
-
-                // Si editamos un contacto que era el preferido, actualizar almacenamiento seguro
-                if (index != null && previousPhone != null && preferredContact.value != null && preferredContact.value!['telefono'] == previousPhone) {
-                  await setPreferredContact({'nombre': nombre, 'telefono': telefonoNormalizado});
+                // Si editamos un contacto que era el preferido, actualizar los datos del contacto favorito
+                if (index != null && preferredContact.value != null && preferredContact.value!['index'] == index) {
+                  await setPreferredContact({'nombre': nombre, 'telefono': telefonoNormalizado, 'index': index});
                   await SecureStorageService.saveEmergencyContact(nombre, telefonoNormalizado);
                 }
 
@@ -285,10 +273,10 @@ class _SenttingsPageState extends State<SenttingsPage> {
             child: const Text('Eliminar'),
             onPressed: () async {
               final navigator = Navigator.of(context);
-              final removed = _contactos.removeAt(index);
-              final removedPhone = removed['telefono'];
+              _contactos.removeAt(index);
               await _saveContacts();
-              if (preferredContact.value != null && preferredContact.value!['telefono'] == removedPhone) {
+              // Si el contacto eliminado era el favorito, limpiar el favorito
+              if (preferredContact.value != null && preferredContact.value!['index'] == index) {
                 await setPreferredContact(null);
               }
               if (!mounted) return;
@@ -628,10 +616,10 @@ class _SenttingsPageState extends State<SenttingsPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   // Favorite star (uses global notifier)
-                                  ValueListenableBuilder<Map<String, String>?>(
+                                  ValueListenableBuilder<Map<String, dynamic>?>(
                                     valueListenable: preferredContact,
                                     builder: (context, fav, _) {
-                                      final bool isFav = fav != null && fav['telefono'] == (contacto['telefono'] ?? '');
+                                      final bool isFav = fav != null && fav['index'] == idx;
                                       return IconButton(
                                         constraints: const BoxConstraints(), // Reduce area extra
                                         padding: const EdgeInsets.all(8),
@@ -643,7 +631,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                                             await setPreferredContact(null);
                                             messenger.showSnackBar(const SnackBar(content: Text('Contacto favorito removido')));
                                           } else {
-                                            await setPreferredContact({'nombre': contacto['nombre'] ?? '', 'telefono': contacto['telefono'] ?? ''});
+                                            await setPreferredContact({'nombre': contacto['nombre'] ?? '', 'telefono': contacto['telefono'] ?? '', 'index': idx});
                                             messenger.showSnackBar(const SnackBar(content: Text('Contacto marcado como favorito')));
                                           }
                                           if (!mounted) return;

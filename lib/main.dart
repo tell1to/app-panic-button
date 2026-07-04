@@ -134,7 +134,7 @@ class _InicioPageState extends State<InicioPage> {
   Timer? _holdTimer;
   final int _holdDurationMs = 1200; // 1.2 seconds to activate (reduced)
   // Current preferred contact (from Settings). If null, fallback to '911'.
-  Map<String, String>? _preferredContact;
+  Map<String, dynamic>? _preferredContact;
   // Which of the two small buttons on Inicio is set as favorite: 0 = 911, 1 = contacto
   int _mainFavoriteIndex = 0;
   static const String _mainFavoriteKey = 'main_favorite_index';
