@@ -22,6 +22,21 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   print('[main] iniciando app...');
   
+  // Solicitar permiso de ubicación de forma temprana
+  // Esto soluciona el bug donde no se pide el permiso en el primer lanzamiento
+  print('[main] Solicitando permiso de ubicación...');
+  try {
+    final LocationPermission permission = await Geolocator.checkPermission();
+    print('[main] Permiso actual: $permission');
+    if (permission == LocationPermission.denied) {
+      print('[main] Solicitando permiso...');
+      await Geolocator.requestPermission();
+      print('[main] Permiso solicitado');
+    }
+  } catch (e) {
+    print('[main] ERROR al solicitar permiso: $e');
+  }
+  
   // Inicializar Firebase
   try {
     await FirebaseService.instance.initialize();
@@ -483,8 +498,13 @@ class _InicioPageState extends State<InicioPage> {
   void initState() {
     super.initState();
     
-    // Obtener ubicación al iniciar
-    _obtenerUbicacion(mostrarError: false);
+    // Obtener ubicación cuando el widget esté listo
+    // El permiso ya fue solicitado en main()
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _obtenerUbicacion(mostrarError: false);
+      }
+    });
     
     // Cargar información del rate limit
     _updateRateLimitInfo();
