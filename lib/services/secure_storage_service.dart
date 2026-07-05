@@ -25,7 +25,7 @@ class SecureStorageService {
         value: phone,
       );
     } catch (e) {
-      print('[SecureStorage] Error guardando teléfono preferido: $e');
+      print('[SecureStorage] Error al guardar teléfono preferido: $e');
       rethrow;
     }
   }

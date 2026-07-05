@@ -310,16 +310,6 @@ class _InicioPageState extends State<InicioPage> {
       );
       
       print('[main._activateEmergency] Alerta guardada en Firebase con ID: $alertId');
-      
-      // Notificar a los contactos de emergencia
-      await AlertService.instance.notifyContacts(
-        alertId: alertId,
-        latitude: _lastLocation?.latitude,
-        longitude: _lastLocation?.longitude,
-        description: 'Alerta de pánico activada - Se necesita ayuda inmediata',
-      );
-      
-      print('[main._activateEmergency] Contactos notificados sobre la alerta');
     } catch (e) {
       print('[main._activateEmergency] ERROR al guardar alerta: $e');
       FirebaseService.instance.recordError(e, StackTrace.current, reason: 'Error al guardar alerta en Firebase');
