@@ -165,6 +165,14 @@ class _InicioPageState extends State<InicioPage> {
   String _pais = '';
   bool _ubicacionCargando = true;
   Position? _lastLocation; // Guardar última ubicación conocida
+  bool _usingLastKnownLocation = false; // Indica si estamos usando la última ubicación guardada
+  
+  // Claves para persistir última ubicación en SharedPreferences
+  static const String _lastLocationLatKey = 'last_location_lat';
+  static const String _lastLocationLonKey = 'last_location_lon';
+  static const String _lastLocationCityKey = 'last_location_city';
+  static const String _lastLocationCountryKey = 'last_location_country';
+  static const String _lastLocationTimestampKey = 'last_location_timestamp';
   
   // Rate Limiting para botón de pánico
   static const String _panicButtonAction = 'panic_button_main';
@@ -349,7 +357,62 @@ class _InicioPageState extends State<InicioPage> {
     print('[main._activateEmergency] FIN DE ACTIVACIÓN DE EMERGENCIA');
   }
 
-  // Nueva función para obtener ubicación
+  /// Guardar última ubicación conocida en SharedPreferences
+  Future<void> _saveLastLocation(Position position, String city, String country) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_lastLocationLatKey, position.latitude);
+      await prefs.setDouble(_lastLocationLonKey, position.longitude);
+      await prefs.setString(_lastLocationCityKey, city);
+      await prefs.setString(_lastLocationCountryKey, country);
+      await prefs.setInt(_lastLocationTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      print('[_obtenerUbicacion] ubicación guardada: $city, $country (${position.latitude}, ${position.longitude})');
+    } catch (e) {
+      print('[_obtenerUbicacion] error guardando ubicación: $e');
+    }
+  }
+
+  /// Cargar última ubicación conocida desde SharedPreferences
+  Future<void> _loadLastKnownLocation() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble(_lastLocationLatKey);
+      final lon = prefs.getDouble(_lastLocationLonKey);
+      final city = prefs.getString(_lastLocationCityKey);
+      final country = prefs.getString(_lastLocationCountryKey);
+      final timestamp = prefs.getInt(_lastLocationTimestampKey);
+
+      if (lat != null && lon != null && city != null && country != null && timestamp != null) {
+        _lastLocation = Position(
+          latitude: lat,
+          longitude: lon,
+          timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
+          accuracy: 0,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+          headingAccuracy: 0,
+          speed: 0,
+          speedAccuracy: 0,
+        );
+        
+        if (mounted) {
+          setState(() {
+            _ciudad = '$city (última conocida)';
+            _pais = country;
+            _usingLastKnownLocation = true;
+          });
+        }
+        
+        final minutesAgo = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(timestamp)).inMinutes;
+        print('[_obtenerUbicacion] ubicación cargada: $city, $country ($minutesAgo min ago)');
+      }
+    } catch (e) {
+      print('[_obtenerUbicacion] error cargando última ubicación: $e');
+    }
+  }
+
+  /// Nueva función para obtener ubicación
   Future<void> _obtenerUbicacion({bool mostrarError = true}) async {
     print('[_obtenerUbicacion] iniciando obtención de ubicación...');
     
@@ -357,6 +420,7 @@ class _InicioPageState extends State<InicioPage> {
       setState(() {
         _ubicacionCargando = true;
         _ciudad = 'Obteniendo...';
+        _usingLastKnownLocation = false;
       });
     }
     
@@ -364,12 +428,10 @@ class _InicioPageState extends State<InicioPage> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         print('[_obtenerUbicacion] servicio de ubicación deshabilitado');
+        // Intentar cargar última conocida
+        await _loadLastKnownLocation();
         if (mounted) {
-          setState(() {
-            _ciudad = 'Servicio deshabilitado';
-            _pais = '';
-            _ubicacionCargando = false;
-          });
+          setState(() => _ubicacionCargando = false);
         }
         return;
       }
@@ -383,12 +445,10 @@ class _InicioPageState extends State<InicioPage> {
         print('[_obtenerUbicacion] permiso después de solicitud: $permission');
         
         if (permission == LocationPermission.denied) {
+          // Intentar cargar última conocida
+          await _loadLastKnownLocation();
           if (mounted) {
-            setState(() {
-              _ciudad = 'Permiso denegado';
-              _pais = '';
-              _ubicacionCargando = false;
-            });
+            setState(() => _ubicacionCargando = false);
           }
           return;
         }
@@ -396,12 +456,10 @@ class _InicioPageState extends State<InicioPage> {
 
       if (permission == LocationPermission.deniedForever) {
         print('[_obtenerUbicacion] permisos negados permanentemente');
+        // Intentar cargar última conocida
+        await _loadLastKnownLocation();
         if (mounted) {
-          setState(() {
-            _ciudad = 'Sin permisos';
-            _pais = '';
-            _ubicacionCargando = false;
-          });
+          setState(() => _ubicacionCargando = false);
         }
         return;
       }
@@ -425,23 +483,31 @@ class _InicioPageState extends State<InicioPage> {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        print('[_obtenerUbicacion] placemark: ciudad=${place.locality}, país=${place.country}');
+        final city = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Ubicación desconocida';
+        final country = place.country ?? '';
+        print('[_obtenerUbicacion] placemark: ciudad=$city, país=$country');
         
         if (mounted) {
           setState(() {
-            _ciudad = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Ubicación desconocida';
-            _pais = place.country ?? '';
+            _ciudad = city;
+            _pais = country;
             _ubicacionCargando = false;
+            _usingLastKnownLocation = false;
           });
         }
+        
+        // Guardar para futuro uso sin conexión
+        await _saveLastLocation(position, city, country);
         print('[_obtenerUbicacion] ubicación actualizada correctamente: $_ciudad, $_pais');
       } else {
         print('[_obtenerUbicacion] sin placemarks disponibles');
+        // Guardamos la coordenada pero sin ciudad/país
         if (mounted) {
           setState(() {
             _ciudad = 'Ubicación desconocida';
             _pais = '';
             _ubicacionCargando = false;
+            _usingLastKnownLocation = false;
           });
         }
       }
@@ -449,15 +515,15 @@ class _InicioPageState extends State<InicioPage> {
       print('[_obtenerUbicacion] ERROR: $e');
       print('[_obtenerUbicacion] stack trace: ${StackTrace.current}');
       
+      // Si falla (probablemente por falta de internet), intentar cargar última conocida
+      print('[_obtenerUbicacion] intentando cargar última ubicación conocida...');
+      await _loadLastKnownLocation();
+      
       if (mounted) {
-        setState(() {
-          _ciudad = 'Error obteniendo ubicación';
-          _pais = '';
-          _ubicacionCargando = false;
-        });
+        setState(() => _ubicacionCargando = false);
         
         // Mostrar notificación de error si es solicitado
-        if (mostrarError) {
+        if (mostrarError && !_usingLastKnownLocation) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error al obtener ubicación: $e'),
@@ -487,6 +553,9 @@ class _InicioPageState extends State<InicioPage> {
   @override
   void initState() {
     super.initState();
+    
+    // Cargar última ubicación conocida inmediatamente
+    _loadLastKnownLocation();
     
     // Obtener ubicación cuando el widget esté listo
     // El permiso ya fue solicitado en main()
@@ -628,14 +697,28 @@ class _InicioPageState extends State<InicioPage> {
                       Text(
                         _pais.isNotEmpty ? '$_ciudad, $_pais' : _ciudad,
                         style: TextStyle(
-                          color: _ciudad == 'Obteniendo...' ? Colors.orange : Colors.black87,
+                          color: _ciudad == 'Obteniendo...' 
+                            ? Colors.orange 
+                            : (_usingLastKnownLocation ? Colors.purple : Colors.black87),
                           fontSize: (cardHeight * 0.09).clamp(10.0, 12.0),
-                          fontWeight: FontWeight.w600,
+                          fontWeight: _usingLastKnownLocation ? FontWeight.bold : FontWeight.w600,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                       ),
+                      if (_usingLastKnownLocation)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            '⚠️ Sin conexión a Internet',
+                            style: TextStyle(
+                              color: Colors.purple,
+                              fontSize: (cardHeight * 0.08).clamp(9.0, 11.0),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

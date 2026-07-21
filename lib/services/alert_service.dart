@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'secure_storage_service.dart';
 import 'encryption_service.dart';
 import 'sync_service.dart';
+import 'offline_sync_service.dart';
 
 /// Modelo de Alerta mejorado con encriptación y sincronización
 class AlertModel {
@@ -175,9 +176,11 @@ class AlertService {
       // Inicializar servicios de encriptación y sincronización
       EncryptionService.instance.initialize();
       await SyncService.instance.initialize();
+      await OfflineSyncService.instance.initialize();
 
       _isInitialized = true;
       print('[AlertService.initializeFromStorage] ✓ Inicializado con usuario: $_userId');
+      print('[AlertService.initializeFromStorage] ✓ OfflineSyncService inicializado');
       
       // Iniciar sincronización de alertas no sincronizadas
       _startSyncWatcher();
@@ -257,21 +260,24 @@ class AlertService {
 
       // 2. Guardar localmente (siempre con synced: false inicialmente)
       try {
-        await SyncService.instance.saveAlertLocally(
-          SyncAlert(
-            id: alertId,
-            userId: ciToUse,
-            timestamp: alert.timestamp,
-            latitude: latitude,
-            longitude: longitude,
-            status: 'active',
-            contactsNotified: contactsNotified,
-            description: description,
-            numberCalled: numberCalled,
-            synced: false, // Siempre guardamos como false primero
-          ),
+        final offlineAlert = OfflineAlert(
+          id: alertId,
+          userId: ciToUse,
+          timestamp: alert.timestamp,
+          latitude: latitude,
+          longitude: longitude,
+          status: 'active',
+          contactsNotified: contactsNotified,
+          description: description,
+          numberCalled: numberCalled,
+          latitudeEncrypted: latEncrypted,
+          longitudeEncrypted: lonEncrypted,
+          numberCalledEncrypted: numEncrypted,
+          synced: false, // Siempre guardamos como false primero
         );
-        print('[AlertService.createAlert] ✓ Guardada localmente');
+        
+        await OfflineSyncService.instance.saveAlertLocally(offlineAlert);
+        print('[AlertService.createAlert] ✓ Guardada localmente (archivo JSON)');
       } catch (e) {
         print('[AlertService.createAlert] ✗ Error guardando localmente: $e');
       }
@@ -280,6 +286,7 @@ class AlertService {
       if (firebaseSuccess) {
         try {
           await SyncService.instance.markAsSynced(alertId);
+          await OfflineSyncService.instance.markAlertAsSynced(alertId);
           print('[AlertService.createAlert] ✓ Marcada como sincronizada');
         } catch (e) {
           print('[AlertService.createAlert] ✗ Error marcando como sincronizada: $e');
