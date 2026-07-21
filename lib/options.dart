@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'symptoms.dart';
-import 'documents.dart';
 import 'services/alert_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/appointment_reminder_service.dart';
@@ -713,11 +712,6 @@ class _OptionsPageState extends State<OptionsPage> {
 
     if (title == 'Información de seguro') {
       await _showInsuranceDialog(context);
-      return;
-    }
-
-    if (title == 'Documentos médicos') {
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DocumentsPage()));
       return;
     }
 
@@ -1874,7 +1868,6 @@ class _OptionsPageState extends State<OptionsPage> {
             const SizedBox(height: 12),
             Text('Documentos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: sectionTitleFontSize)),
             const SizedBox(height: 8),
-            _buildCard(context, 'Documentos médicos', 'Estudios y recetas', icon: Icons.description, color: Colors.deepPurple),
             _buildCard(context, 'Información de seguro', 'Pólizas y cobertura', icon: Icons.shield, color: Colors.pink),
             // Mostrar resumen de seguro si existe (moved here)
             if (_insuranceCompany != null || _policyNumber != null || _insurancePhone != null)
