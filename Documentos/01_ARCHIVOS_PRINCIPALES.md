@@ -606,3 +606,9 @@ class Preferences {
 - **Para preguntas sobre UI:** Ver c贸digo de cada archivo
 - **Para integraci贸n Firebase:** Ver `FirebaseService` en servicios
 - **Para validaci贸n de datos:** Ver m贸dulo Validators
+
+---
+
+**趌tima actualizaci髇:** 21 de julio de 2026  
+**Versi髇:** 1.3.47  
+**Estado:** Desarrollo

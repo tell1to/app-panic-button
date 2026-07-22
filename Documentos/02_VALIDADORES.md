@@ -768,3 +768,9 @@ if (!Validators.isValidEmail(doctorEmail)) {
 2. Para archivos principales: Ver `01_ARCHIVOS_PRINCIPALES.md`
 3. Para permisos requeridos: Ver `05_PERMISOS_REQUERIDOS.md`
 4. Para ver ejemplos vivos: Abrir `lib/EJEMPLOS_FASE_1.dart`
+
+---
+
+**Última actualización:** 21 de julio de 2026  
+**Versión:** 1.3.47  
+**Estado:** Desarrollo

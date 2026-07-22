@@ -667,6 +667,6 @@ if (status.isPermanentlyDenied) {
 
 ---
 
-**Última actualización:** 21 de diciembre de 2025  
-**Versión:** 1.0  
-**Estado:** ✅ Completo y configurado para Android, iOS y Web
+**Última actualización:** 21 de julio de 2026  
+**Versión:** 1.3.47  
+**Estado:** Desarrollo
