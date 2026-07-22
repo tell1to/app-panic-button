@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -240,6 +241,108 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
+  /// Cargar todos los datos del paciente desde SharedPreferences
+  Future<Map<String, dynamic>> _loadPatientData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Datos básicos del perfil
+      final nombres = prefs.getString('profile_nombres') ?? '';
+      final apellidos = prefs.getString('profile_apellidos') ?? '';
+      final edad = prefs.getString('profile_edad') ?? '';
+      final tipoSangre = prefs.getString('profile_blood_type') ?? '';
+      
+      // Patologías catastróficas
+      final patologiasJson = prefs.getStringList('profile_enfermedades') ?? [];
+      final otraEnfermedad = prefs.getString('profile_other_disease') ?? '';
+      List<String> patologias = List<String>.from(patologiasJson);
+      if (otraEnfermedad.isNotEmpty && !patologias.contains(otraEnfermedad)) {
+        patologias.add(otraEnfermedad);
+      }
+      
+      // Contacto de emergencia seleccionado
+      final prefIndex = prefs.getInt('preferred_index');
+      String? contactoEmergenciaSeleccionado;
+      if (prefIndex != null && prefIndex >= 0) {
+        final prefName = prefs.getString('preferred_name') ?? '';
+        final prefPhone = prefs.getString('preferred_phone') ?? '';
+        if (prefName.isNotEmpty && prefPhone.isNotEmpty) {
+          contactoEmergenciaSeleccionado = '$prefName: $prefPhone';
+        }
+      }
+      
+      // Condiciones médicas
+      final condicionesJson = prefs.getString('conditions') ?? '[]';
+      List<Map<String, String>> condiciones = [];
+      try {
+        final List<dynamic> list = jsonDecode(condicionesJson);
+        condiciones = list.map((e) => Map<String, String>.from(e as Map)).toList();
+      } catch (e) {
+        print('[_loadPatientData] Error parsing condiciones: $e');
+      }
+      
+      // Medicamentos habituales
+      final medicamentosJson = prefs.getString('medications') ?? '[]';
+      List<String> medicamentos = [];
+      try {
+        final List<dynamic> list = jsonDecode(medicamentosJson);
+        medicamentos = list.map((e) => e as String).toList();
+      } catch (e) {
+        print('[_loadPatientData] Error parsing medicamentos: $e');
+      }
+      
+      // Alergias detectadas
+      final alergiasJson = prefs.getString('allergies') ?? '[]';
+      List<String> alergias = [];
+      try {
+        final List<dynamic> list = jsonDecode(alergiasJson);
+        alergias = list.map((e) => e as String).toList();
+      } catch (e) {
+        print('[_loadPatientData] Error parsing alergias: $e');
+      }
+      
+      // Síntomas registrados
+      final sintomasJson = prefs.getString('symptoms');
+      List<Map<String, dynamic>> sintomas = [];
+      if (sintomasJson != null) {
+        try {
+          final List<dynamic> list = jsonDecode(sintomasJson);
+          sintomas = list.map((e) => Map<String, dynamic>.from(e)).toList();
+        } catch (e) {
+          print('[_loadPatientData] Error parsing síntomas: $e');
+        }
+      }
+      
+      // Estado de aseguramiento
+      Map<String, dynamic> aseguramiento = {};
+      final seguroEmpresa = prefs.getString('insuranceCompany');
+      final seguroPoliza = prefs.getString('insurancePolicy');
+      final seguroTelefono = prefs.getString('insurancePhone');
+      if (seguroEmpresa != null && seguroEmpresa.isNotEmpty) {
+        aseguramiento['empresa'] = seguroEmpresa;
+        aseguramiento['poliza'] = seguroPoliza ?? '';
+        aseguramiento['telefono'] = seguroTelefono ?? '';
+      }
+      
+      return {
+        'nombres': nombres,
+        'apellidos': apellidos,
+        'edad': edad,
+        'tipoSangre': tipoSangre,
+        'patologiasCatastroficas': patologias,
+        'contactoEmergenciaSeleccionado': contactoEmergenciaSeleccionado,
+        'condicionesMedicas': condiciones,
+        'medicamentosHabitales': medicamentos,
+        'alergias': alergias,
+        'sintomas': sintomas,
+        'aseguramiento': aseguramiento,
+      };
+    } catch (e) {
+      print('[_loadPatientData] ERROR: $e');
+      return {};
+    }
+  }
+
   void _activateEmergency() async {
     print('[main._activateEmergency] INICIANDO ACTIVACIÓN DE EMERGENCIA');
     
@@ -286,7 +389,7 @@ class _InicioPageState extends State<InicioPage> {
     // Registrar evento en Firebase Analytics
     await FirebaseService.instance.logEvent('emergency_activated', {
       'timestamp': DateTime.now().toIso8601String(),
-      'has_location': _lastLocation != null,
+      'has_location': _lastLocation != null ? '1' : '0',
     });
     
     // Decidir qué número llamar ANTES de crear la alerta
@@ -303,6 +406,9 @@ class _InicioPageState extends State<InicioPage> {
     
     print('[main._activateEmergency] Número a llamar: $numberToCall');
     
+    // Cargar datos del paciente
+    final patientData = await _loadPatientData();
+    
     // Crear alerta en Firebase
     try {
       // Obtener CI del usuario desde secure storage
@@ -315,6 +421,17 @@ class _InicioPageState extends State<InicioPage> {
         contactsNotified: [],
         description: 'Alerta de pánico activada',
         numberCalled: numberToCall,
+        // Datos del paciente
+        nombres: patientData['nombres'] as String?,
+        apellidos: patientData['apellidos'] as String?,
+        edad: patientData['edad'] as String?,
+        tipoSangre: patientData['tipoSangre'] as String?,
+        patologiasCatastroficas: patientData['patologiasCatastroficas'] as List<String>?,
+        condicionesMedicas: patientData['condicionesMedicas'] as List<Map<String, String>>?,
+        medicamentosHabitales: patientData['medicamentosHabitales'] as List<String>?,
+        alergias: patientData['alergias'] as List<String>?,
+        sintomas: patientData['sintomas'] as List<Map<String, dynamic>>?,
+        aseguramiento: patientData['aseguramiento'] as Map<String, dynamic>?,
       );
       
       print('[main._activateEmergency] Alerta guardada en Firebase con ID: $alertId');

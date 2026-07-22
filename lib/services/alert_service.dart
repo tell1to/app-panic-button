@@ -23,6 +23,18 @@ class AlertModel {
   final String? longitudeEncrypted;
   final String? numberCalledEncrypted;
   
+  // Datos del paciente
+  final String? nombres;
+  final String? apellidos;
+  final String? edad;
+  final String? tipoSangre;
+  final List<String>? patologiasCatastroficas;
+  final List<Map<String, String>>? condicionesMedicas;
+  final List<String>? medicamentosHabitales;
+  final List<String>? alergias;
+  final List<Map<String, dynamic>>? sintomas;
+  final Map<String, dynamic>? aseguramiento;
+  
   // Estado de sincronización
   final bool synced;
 
@@ -39,6 +51,16 @@ class AlertModel {
     this.latitudeEncrypted,
     this.longitudeEncrypted,
     this.numberCalledEncrypted,
+    this.nombres,
+    this.apellidos,
+    this.edad,
+    this.tipoSangre,
+    this.patologiasCatastroficas,
+    this.condicionesMedicas,
+    this.medicamentosHabitales,
+    this.alergias,
+    this.sintomas,
+    this.aseguramiento,
     this.synced = false,
   });
 
@@ -55,8 +77,21 @@ class AlertModel {
         'longitude_encrypted': longitudeEncrypted ?? '',
         'status': status,
         'contactsNotified': contactsNotified,
-        'description': description,
+        'descripción': description,
         'numberCalled_encrypted': numberCalledEncrypted ?? '',
+        // Datos del paciente
+        'paciente': {
+          'nombres': nombres ?? '',
+          'apellidos': apellidos ?? '',
+          'edad': edad ?? '',
+          'tipoSangre': tipoSangre ?? '',
+          'patologiasCatastróficas': patologiasCatastroficas ?? [],
+          'condicionesMedicas': condicionesMedicas ?? [],
+          'medicamentosHabitales': medicamentosHabitales ?? [],
+          'alergias': alergias ?? [],
+          'sintomas': sintomas ?? [],
+          'aseguramiento': aseguramiento ?? {},
+        }
       };
     } else {
       // Para local storage sin encriptación
@@ -71,8 +106,20 @@ class AlertModel {
         'status': status,
         'contactsNotified': contactsNotified,
         'description': description,
-        'numberCalled': numberCalled,
         'synced': synced,
+        // Datos del paciente
+        'paciente': {
+          'nombres': nombres ?? '',
+          'apellidos': apellidos ?? '',
+          'edad': edad ?? '',
+          'tipoSangre': tipoSangre ?? '',
+          'patologiasCatastróficas': patologiasCatastroficas ?? [],
+          'condicionesMedicas': condicionesMedicas ?? [],
+          'medicamentosHabitales': medicamentosHabitales ?? [],
+          'alergias': alergias ?? [],
+          'sintomas': sintomas ?? [],
+          'aseguramiento': aseguramiento ?? {},
+        }
       };
     }
   }
@@ -87,7 +134,6 @@ class AlertModel {
       final encService = EncryptionService.instance;
       final latStr = json['latitude_encrypted'] as String? ?? '';
       final lonStr = json['longitude_encrypted'] as String? ?? '';
-      final numStr = json['numberCalled_encrypted'] as String? ?? '';
 
       if (latStr.isNotEmpty) {
         lat = double.tryParse(encService.decrypt(latStr));
@@ -95,13 +141,43 @@ class AlertModel {
       if (lonStr.isNotEmpty) {
         lon = double.tryParse(encService.decrypt(lonStr));
       }
-      if (numStr.isNotEmpty) {
-        numberCalled = encService.decrypt(numStr);
-      }
+      // numberCalled ahora está en paciente.contactoEmergenciaSeleccionado
     } else {
       lat = (json['latitude'] as num?)?.toDouble();
       lon = (json['longitude'] as num?)?.toDouble();
       numberCalled = json['numberCalled'] as String?;
+    }
+
+    // Parsear datos del paciente
+    final pacienteData = json['paciente'] as Map<dynamic, dynamic>? ?? {};
+    
+    List<String>? patologiasCatastroficas;
+    if (pacienteData['patologiasCatastróficas'] != null) {
+      patologiasCatastroficas = List<String>.from(pacienteData['patologiasCatastróficas'] ?? []);
+    }
+    
+    List<Map<String, String>>? condicionesMedicas;
+    if (pacienteData['condicionesMedicas'] != null) {
+      condicionesMedicas = (pacienteData['condicionesMedicas'] as List?)
+          ?.map((e) => Map<String, String>.from(e as Map))
+          .toList();
+    }
+    
+    List<String>? medicamentosHabitales;
+    if (pacienteData['medicamentosHabitales'] != null) {
+      medicamentosHabitales = List<String>.from(pacienteData['medicamentosHabitales'] ?? []);
+    }
+    
+    List<String>? alergias;
+    if (pacienteData['alergias'] != null) {
+      alergias = List<String>.from(pacienteData['alergias'] ?? []);
+    }
+    
+    List<Map<String, dynamic>>? sintomas;
+    if (pacienteData['sintomas'] != null) {
+      sintomas = (pacienteData['sintomas'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     }
 
     return AlertModel(
@@ -115,8 +191,19 @@ class AlertModel {
       status: json['status'] as String? ?? 'active',
       contactsNotified: List<String>.from(json['contactsNotified'] ?? []),
       description: json['description'] as String? ?? '',
-      numberCalled: numberCalled,
+      numberCalled: numberCalled ?? '', // Fallback, se obtiene de paciente.contactoEmergenciaSeleccionado
       synced: json['synced'] as bool? ?? false,
+      // Datos del paciente
+      nombres: pacienteData['nombres'] as String?,
+      apellidos: pacienteData['apellidos'] as String?,
+      edad: pacienteData['edad'] as String?,
+      tipoSangre: pacienteData['tipoSangre'] as String?,
+      patologiasCatastroficas: patologiasCatastroficas,
+      condicionesMedicas: condicionesMedicas,
+      medicamentosHabitales: medicamentosHabitales,
+      alergias: alergias,
+      sintomas: sintomas,
+      aseguramiento: pacienteData['aseguramiento'] as Map<String, dynamic>?,
     );
   }
 
@@ -198,6 +285,17 @@ class AlertService {
     required List<String> contactsNotified,
     required String description,
     required String numberCalled,
+    // Datos del paciente
+    String? nombres,
+    String? apellidos,
+    String? edad,
+    String? tipoSangre,
+    List<String>? patologiasCatastroficas,
+    List<Map<String, String>>? condicionesMedicas,
+    List<String>? medicamentosHabitales,
+    List<String>? alergias,
+    List<Map<String, dynamic>>? sintomas,
+    Map<String, dynamic>? aseguramiento,
   }) async {
     if (_userId == null) {
       throw Exception('AlertService no inicializado. Llama a initializeFromStorage()');
@@ -215,7 +313,7 @@ class AlertService {
       final alertId = _database.child('users').push().key ?? 
         '${DateTime.now().millisecondsSinceEpoch}';
 
-      // Encriptar datos sensibles
+      // Encriptar datos de ubicación y teléfono
       final encService = EncryptionService.instance;
       final latEncrypted = latitude != null ? encService.encrypt(latitude.toString()) : '';
       final lonEncrypted = longitude != null ? encService.encrypt(longitude.toString()) : '';
@@ -235,6 +333,17 @@ class AlertService {
         longitudeEncrypted: lonEncrypted,
         numberCalledEncrypted: numEncrypted,
         synced: false,
+        // Datos del paciente
+        nombres: nombres,
+        apellidos: apellidos,
+        edad: edad,
+        tipoSangre: tipoSangre,
+        patologiasCatastroficas: patologiasCatastroficas,
+        condicionesMedicas: condicionesMedicas,
+        medicamentosHabitales: medicamentosHabitales,
+        alergias: alergias,
+        sintomas: sintomas,
+        aseguramiento: aseguramiento,
       );
 
       // 1. Intentar guardar en Firebase
@@ -272,7 +381,6 @@ class AlertService {
           numberCalled: numberCalled,
           latitudeEncrypted: latEncrypted,
           longitudeEncrypted: lonEncrypted,
-          numberCalledEncrypted: numEncrypted,
           synced: false, // Siempre guardamos como false primero
         );
         
@@ -423,11 +531,10 @@ class AlertService {
 
       for (final alert in unsyncedAlerts) {
         try {
-          // Encriptar datos sensibles
+          // Encriptar datos de ubicaci\u00f3n (numberCalled ya est\u00e1 en paciente.contactoEmergenciaSeleccionado)
           final encService = EncryptionService.instance;
           final latEncrypted = alert.latitude != null ? encService.encrypt(alert.latitude.toString()) : '';
           final lonEncrypted = alert.longitude != null ? encService.encrypt(alert.longitude.toString()) : '';
-          final numEncrypted = encService.encrypt(alert.numberCalled ?? '');
 
           // Construir el objeto de alerta con datos encriptados
           final alertData = {
@@ -438,7 +545,6 @@ class AlertService {
             'time': _formatTime(alert.timestamp),
             'latitude_encrypted': latEncrypted,
             'longitude_encrypted': lonEncrypted,
-            'numberCalled_encrypted': numEncrypted,
             'status': alert.status,
             'contactsNotified': alert.contactsNotified,
             'description': alert.description,
