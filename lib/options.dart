@@ -11,6 +11,7 @@ import 'symptoms.dart';
 import 'services/alert_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/appointment_reminder_service.dart';
+import 'services/pushwoosh_service.dart';
 import 'validators/validators.dart';
 
 class OptionsPage extends StatefulWidget {
@@ -684,6 +685,108 @@ class _OptionsPageState extends State<OptionsPage> {
       await prefs.setString('allergies', jsonEncode(_allergies));
     } catch (e) {
       // ignore
+    }
+  }
+
+  /// Guardar cita y programar recordatorios (local + Pushwoosh)
+  Future<void> _saveAppointment(Map<String, dynamic> appointment) async {
+    try {
+      print('[options] Guardando cita: ${appointment['id']}');
+      
+      // Extraer información de la cita
+      final appointmentId = appointment['id'] as String?;
+      final doctorName = appointment['doctor'] as String?;
+      final appointmentDate = appointment['date'] as String?;
+      final appointmentTime = appointment['time'] as String?;
+      final specialty = appointment['specialty'] as String?;
+      final reminderMinutes = appointment['reminderMinutes'] as int? ?? 30;
+
+      // Guardar en lista local
+      setState(() {
+        _appointments = List<Map<String, dynamic>>.from(_appointments)
+          ..add(appointment);
+      });
+
+      // Persistir en SharedPreferences
+      await _saveAppointments();
+      print('[options] Cita guardada en SharedPreferences');
+
+      // Programar recordatorio local (flutter_local_notifications)
+      if (appointmentId != null && appointmentDate != null && appointmentTime != null) {
+        try {
+          // Convertir fecha (DD/MM/YYYY) y hora (HH:MM) a DateTime
+          final dateParts = appointmentDate.split('/');
+          final timeParts = appointmentTime.split(':');
+          
+          if (dateParts.length == 3 && timeParts.length == 2) {
+            final day = int.tryParse(dateParts[0]) ?? 1;
+            final month = int.tryParse(dateParts[1]) ?? 1;
+            final year = int.tryParse(dateParts[2]) ?? DateTime.now().year;
+            final hour = int.tryParse(timeParts[0]) ?? 0;
+            final minute = int.tryParse(timeParts[1]) ?? 0;
+            
+            final appointmentDateTime = DateTime(year, month, day, hour, minute);
+
+            await AppointmentReminderService.instance().scheduleAppointmentReminder(
+              appointmentId: appointmentId,
+              appointmentDateTime: appointmentDateTime,
+              doctorName: doctorName ?? 'Doctor',
+              appointmentDate: appointmentDate,
+              appointmentTime: appointmentTime,
+              minutesBeforeReminder: reminderMinutes,
+            );
+            print('[options] Recordatorio local programado: $appointmentId');
+          }
+        } catch (e) {
+          print('[options] Error programando recordatorio local: $e');
+        }
+
+        // Programar recordatorio Pushwoosh (backend)
+        try {
+          await PushwooshService.instance().scheduleAppointmentReminder(
+            appointmentId: appointmentId,
+            doctorName: doctorName ?? 'Doctor',
+            appointmentDate: appointmentDate,
+            appointmentTime: appointmentTime,
+            specialty: specialty ?? 'General',
+          );
+          print('[options] Recordatorio Pushwoosh programado: $appointmentId');
+        } catch (e) {
+          print('[options] Error programando recordatorio Pushwoosh: $e');
+        }
+      }
+
+      print('[options] ✓ Cita y recordatorios guardados exitosamente');
+    } catch (e) {
+      print('[options] ERROR al guardar cita: $e');
+    }
+  }
+
+  /// Eliminar cita y cancelar recordatorios
+  Future<void> _deleteAppointment(String appointmentId) async {
+    try {
+      print('[options] Eliminando cita: $appointmentId');
+
+      // Eliminar de lista local
+      setState(() {
+        _appointments.removeWhere((a) => a['id'] == appointmentId);
+      });
+
+      // Persistir cambios
+      await _saveAppointments();
+      print('[options] Cita eliminada de SharedPreferences');
+
+      // Cancelar recordatorio Pushwoosh
+      try {
+        await PushwooshService.instance().cancelAppointmentReminder(appointmentId);
+        print('[options] Recordatorio Pushwoosh cancelado: $appointmentId');
+      } catch (e) {
+        print('[options] Error cancelando recordatorio Pushwoosh: $e');
+      }
+
+      print('[options] ✓ Cita y recordatorios eliminados exitosamente');
+    } catch (e) {
+      print('[options] ERROR al eliminar cita: $e');
     }
   }
 

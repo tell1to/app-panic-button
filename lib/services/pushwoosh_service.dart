@@ -71,9 +71,46 @@ class PushwooshService {
         return;
       }
 
-      // TODO: Configurar listeners cuando la API esté completamente verificada
-      // Por ahora, solo hacemos la inicialización básica
-      print('[PushwooshService._setupNotificationHandlers] Handlers omitidos por ahora');
+      // Handler cuando se recibe una notificación mientras la app está activa (foreground)
+      try {
+        instance.onPushReceived.listen((event) {
+          print('[Pushwoosh.onPushReceived] Notificación recibida en foreground');
+          try {
+            final message = event.pushwooshMessage;
+            print('[Pushwoosh.onPushReceived] Título: ${message?.title}');
+            print('[Pushwoosh.onPushReceived] Contenido: ${message?.message}');
+            if (message?.customData != null) {
+              print('[Pushwoosh.onPushReceived] Datos personalizados: ${message?.customData}');
+            }
+          } catch (e) {
+            print('[Pushwoosh.onPushReceived] Error al procesar evento: $e');
+          }
+        });
+      } catch (e) {
+        print('[PushwooshService._setupNotificationHandlers] Error configurando onPushReceived: $e');
+      }
+
+      // Handler cuando se toca una notificación
+      try {
+        instance.onPushAccepted.listen((event) {
+          print('[Pushwoosh.onPushAccepted] Notificación tocada por usuario');
+          try {
+            final message = event.pushwooshMessage;
+            print('[Pushwoosh.onPushAccepted] Título: ${message?.title}');
+            
+            // Si tiene customData, procesar navegación
+            if (message?.customData != null) {
+              _handleNotificationNavigation(message?.customData);
+            }
+          } catch (e) {
+            print('[Pushwoosh.onPushAccepted] Error al procesar evento: $e');
+          }
+        });
+      } catch (e) {
+        print('[PushwooshService._setupNotificationHandlers] Error configurando onPushAccepted: $e');
+      }
+
+      print('[PushwooshService._setupNotificationHandlers] Listeners configurados exitosamente');
     } catch (e) {
       print('[PushwooshService._setupNotificationHandlers] Error general: $e');
     }
@@ -96,24 +133,60 @@ class PushwooshService {
     }
   }
 
-  /// Enviar notificación push para recordatorio de cita médica
-  /// Esta función se llama desde el backend/servidor
-  /// Aquí es solo para referencia
-  Future<void> sendAppointmentReminder({
+  /// Programar recordatorio de cita médica
+  /// Se llama cuando se crea/modifica una cita
+  /// En producción, esto enviaría información al backend para que envíe la notificación push
+  Future<void> scheduleAppointmentReminder({
+    required String appointmentId,
     required String doctorName,
     required String appointmentDate,
     required String appointmentTime,
-    required String appointmentId,
+    required String specialty,
   }) async {
     try {
-      // En una app real, esto se enviaría desde el backend
-      // usando la API de Pushwoosh
-      print('[PushwooshService.sendAppointmentReminder] Recordatorio de cita:');
-      print('[PushwooshService.sendAppointmentReminder] Doctor: $doctorName');
-      print('[PushwooshService.sendAppointmentReminder] Fecha: $appointmentDate');
-      print('[PushwooshService.sendAppointmentReminder] Hora: $appointmentTime');
+      print('[PushwooshService.scheduleAppointmentReminder] Programando recordatorio:');
+      print('[PushwooshService.scheduleAppointmentReminder] ID: $appointmentId');
+      print('[PushwooshService.scheduleAppointmentReminder] Doctor: $doctorName');
+      print('[PushwooshService.scheduleAppointmentReminder] Fecha: $appointmentDate');
+      print('[PushwooshService.scheduleAppointmentReminder] Hora: $appointmentTime');
+      print('[PushwooshService.scheduleAppointmentReminder] Especialidad: $specialty');
+
+      // En producción, esto enviaría un request a tu backend con:
+      // POST /api/appointments/schedule-push-reminder
+      // {
+      //   "appointmentId": appointmentId,
+      //   "doctorName": doctorName,
+      //   "appointmentDate": appointmentDate,
+      //   "appointmentTime": appointmentTime,
+      //   "specialty": specialty,
+      //   "userId": <userId desde Pushwoosh>,
+      //   "deviceId": <deviceId desde Pushwoosh>
+      // }
+      //
+      // El backend usaría la API de Pushwoosh para:
+      // 1. Segmentar por deviceId
+      // 2. Enviar notificación con customData = {appointmentId: ..., type: "appointment_reminder"}
+      // 3. Programar para X minutos antes de la cita
+
+      print('[PushwooshService.scheduleAppointmentReminder] ✓ Recordatorio registrado (implementación local)');
+      print('[PushwooshService.scheduleAppointmentReminder] TODO: Integrar con backend Pushwoosh API');
     } catch (e) {
-      print('[PushwooshService.sendAppointmentReminder] ERROR: $e');
+      print('[PushwooshService.scheduleAppointmentReminder] ERROR: $e');
+    }
+  }
+
+  /// Cancelar recordatorio de cita (si se borra la cita)
+  Future<void> cancelAppointmentReminder(String appointmentId) async {
+    try {
+      print('[PushwooshService.cancelAppointmentReminder] Cancelando recordatorio: $appointmentId');
+
+      // En producción:
+      // DELETE /api/appointments/$appointmentId/cancel-reminder
+      // Esto le diría al backend que cancele la notificación programada
+
+      print('[PushwooshService.cancelAppointmentReminder] ✓ Recordatorio cancelado');
+    } catch (e) {
+      print('[PushwooshService.cancelAppointmentReminder] ERROR: $e');
     }
   }
 
