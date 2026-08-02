@@ -30,11 +30,22 @@ class PushwooshService {
       print('[PushwooshService.initialize] ========================================');
 
       // Configurar handler para notificaciones
-      _setupNotificationHandlers();
+      try {
+        _setupNotificationHandlers();
+      } catch (e) {
+        print('[PushwooshService.initialize] Error al configurar handlers: $e');
+      }
 
-      // Registrar para notificaciones push
-      await Pushwoosh.getInstance.registerForPushNotifications();
-      print('[PushwooshService.initialize] ✓ Registrado para notificaciones push');
+      // Intentar registrar para notificaciones push
+      try {
+        final instance = Pushwoosh.getInstance;
+        if (instance != null) {
+          await instance.registerForPushNotifications();
+          print('[PushwooshService.initialize] ✓ Registrado para notificaciones push');
+        }
+      } catch (e) {
+        print('[PushwooshService.initialize] Nota: registerForPushNotifications no disponible: $e');
+      }
 
       _isInitialized = true;
       print('[PushwooshService.initialize] ========================================');
@@ -42,46 +53,76 @@ class PushwooshService {
       print('[PushwooshService.initialize] ========================================');
     } catch (e, stackTrace) {
       print('[PushwooshService.initialize] ========================================');
-      print('[PushwooshService.initialize] ✗ ERROR AL INICIALIZAR PUSHWOOSH');
+      print('[PushwooshService.initialize] ⚠ ADVERTENCIA AL INICIALIZAR PUSHWOOSH');
       print('[PushwooshService.initialize] Error: $e');
       print('[PushwooshService.initialize] StackTrace: $stackTrace');
       print('[PushwooshService.initialize] ========================================');
-      rethrow;
+      // NO relanzar excepción - continuar con la app igualmente
+      _isInitialized = true;
     }
   }
 
   /// Configurar handlers para notificaciones push
   void _setupNotificationHandlers() {
-    // Handler cuando se recibe una notificación mientras la app está activa (foreground)
-    Pushwoosh.getInstance.onPushReceived.listen((event) {
-      print('[Pushwoosh.onPushReceived] Notificación recibida en foreground');
-      print('[Pushwoosh.onPushReceived] Payload: ${event.pushwooshMessage.payload}');
-      print('[Pushwoosh.onPushReceived] Título: ${event.pushwooshMessage.title}');
-    });
+    try {
+      final instance = Pushwoosh.getInstance;
+      if (instance == null) {
+        print('[PushwooshService._setupNotificationHandlers] Pushwoosh.getInstance es null');
+        return;
+      }
 
-    // Handler cuando se toca una notificación (abre la app o la trae al foreground)
-    Pushwoosh.getInstance.onPushAccepted.listen((event) {
-      print('[Pushwoosh.onPushAccepted] Notificación tocada');
-      print('[Pushwoosh.onPushAccepted] Payload: ${event.pushwooshMessage.payload}');
-      print('[Pushwoosh.onPushAccepted] Título: ${event.pushwooshMessage.title}');
-      
-      // Navegar a la pantalla de citas si es una notificación de cita
-      _handleNotificationNavigation(event.pushwooshMessage.payload);
-    });
+      // Handler cuando se recibe una notificación mientras la app está activa (foreground)
+      try {
+        instance.onPushReceived.listen((event) {
+          print('[Pushwoosh.onPushReceived] Notificación recibida en foreground');
+          try {
+            print('[Pushwoosh.onPushReceived] Payload: ${event.pushwooshMessage?.payload}');
+            print('[Pushwoosh.onPushReceived] Título: ${event.pushwooshMessage?.title}');
+          } catch (e) {
+            print('[Pushwoosh.onPushReceived] Error al procesar payload: $e');
+          }
+        });
+      } catch (e) {
+        print('[PushwooshService._setupNotificationHandlers] Error al configurar onPushReceived: $e');
+      }
+
+      // Handler cuando se toca una notificación (abre la app o la trae al foreground)
+      try {
+        instance.onPushAccepted.listen((event) {
+          print('[Pushwoosh.onPushAccepted] Notificación tocada');
+          try {
+            print('[Pushwoosh.onPushAccepted] Payload: ${event.pushwooshMessage?.payload}');
+            print('[Pushwoosh.onPushAccepted] Título: ${event.pushwooshMessage?.title}');
+          } catch (e) {
+            print('[Pushwoosh.onPushAccepted] Error al procesar payload: $e');
+          }
+
+          // Navegar a la pantalla de citas si es una notificación de cita
+          _handleNotificationNavigation(event.pushwooshMessage?.payload);
+        });
+      } catch (e) {
+        print('[PushwooshService._setupNotificationHandlers] Error al configurar onPushAccepted: $e');
+      }
+    } catch (e) {
+      print('[PushwooshService._setupNotificationHandlers] Error general: $e');
+    }
   }
 
   /// Manejar navegación cuando se toca una notificación
   void _handleNotificationNavigation(dynamic payload) {
     if (payload == null) return;
-    
-    // Implementar lógica de navegación según el tipo de notificación
-    print('[PushwooshService] Procesando notificación tocada');
-    print('[PushwooshService] Payload: $payload');
-    
-    // TODO: Implementar navegación a la pantalla de citas
-    // if (payload.containsKey('appointmentId')) {
-    //   Navigator.pushNamed(context, '/appointments', arguments: payload['appointmentId']);
-    // }
+
+    try {
+      print('[PushwooshService] Procesando notificación tocada');
+      print('[PushwooshService] Payload: $payload');
+
+      // TODO: Implementar navegación a la pantalla de citas
+      // if (payload is Map && payload.containsKey('appointmentId')) {
+      //   Navigator.pushNamed(context, '/appointments', arguments: payload['appointmentId']);
+      // }
+    } catch (e) {
+      print('[PushwooshService._handleNotificationNavigation] Error: $e');
+    }
   }
 
   /// Enviar notificación push para recordatorio de cita médica
@@ -102,7 +143,6 @@ class PushwooshService {
       print('[PushwooshService.sendAppointmentReminder] Hora: $appointmentTime');
     } catch (e) {
       print('[PushwooshService.sendAppointmentReminder] ERROR: $e');
-      rethrow;
     }
   }
 
@@ -123,23 +163,27 @@ class PushwooshService {
   /// Suscribirse a un tópico para recibir notificaciones grupales
   Future<void> subscribeTopic(String topic) async {
     try {
+      final instance = Pushwoosh.getInstance;
+      if (instance == null) return;
+
       // Pushwoosh usa tags para segmentación
-      await Pushwoosh.getInstance.setTags({topic: "1"});
+      await instance.setTags({topic: "1"});
       print('[PushwooshService.subscribeTopic] Suscrito a: $topic');
     } catch (e) {
       print('[PushwooshService.subscribeTopic] ERROR: $e');
-      rethrow;
     }
   }
 
   /// Desuscribirse de un tópico
   Future<void> unsubscribeTopic(String topic) async {
     try {
-      await Pushwoosh.getInstance.setTags({topic: "0"});
+      final instance = Pushwoosh.getInstance;
+      if (instance == null) return;
+
+      await instance.setTags({topic: "0"});
       print('[PushwooshService.unsubscribeTopic] Desuscrito de: $topic');
     } catch (e) {
       print('[PushwooshService.unsubscribeTopic] ERROR: $e');
-      rethrow;
     }
   }
 

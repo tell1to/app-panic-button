@@ -71,7 +71,7 @@ void main() async {
     await PushwooshService.instance().initialize();
     print('[main] PushwooshService inicializado correctamente');
   } catch (e) {
-    print('[main] ERROR al inicializar PushwooshService: $e');
+    print('[main] ADVERTENCIA al inicializar PushwooshService: $e');
     // Continuar igualmente si Pushwoosh no se inicializa
   }
   
