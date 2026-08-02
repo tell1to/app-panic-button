@@ -15,6 +15,7 @@ import 'services/firebase_service.dart';
 import 'services/alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/appointment_reminder_service.dart';
+import 'services/pushwoosh_service.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -63,6 +64,15 @@ void main() async {
   } catch (e) {
     print('[main] ERROR al inicializar AppointmentReminderService: $e');
     // Continuar igualmente si el servicio no se inicializa
+  }
+  
+  // Inicializar Pushwoosh para notificaciones push remotas
+  try {
+    await PushwooshService.instance().initialize();
+    print('[main] PushwooshService inicializado correctamente');
+  } catch (e) {
+    print('[main] ERROR al inicializar PushwooshService: $e');
+    // Continuar igualmente si Pushwoosh no se inicializa
   }
   
   runApp(const MyApp());

@@ -62,22 +62,10 @@ void ejemploCrashlytics() {
 }
 
 // ============================================================================
-// EJEMPLO 3: Firebase Cloud Messaging - Notificaciones Push
+// NOTA: Firebase Cloud Messaging (FCM) ha sido eliminado según políticas
 // ============================================================================
-
-void ejemploCloudMessaging() {
-  // Obtener FCM Token (enviable al servidor)
-  FirebaseService.instance.getFCMToken().then((token) {
-    print('FCM Token: $token');
-    // Este token se enviaría al backend para enviar notificaciones personalizadas
-  });
-
-  // Suscribirse a topic para recibir notificaciones grupales
-  FirebaseService.instance.subscribeTopic('alerts_ecuador').then((_) {
-    print('Suscrito a: alerts_ecuador');
-  });
-
-  // Desuscribirse de un topic
+// Los ejemplos de Cloud Messaging y notificaciones push han sido removidos
+// en esta versión debido a cambios en las políticas de Firebase.
   FirebaseService.instance.unsubscribeTopic('alerts_ecuador').then((_) {
     print('Desuscrito de: alerts_ecuador');
   });
