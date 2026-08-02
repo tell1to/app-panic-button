@@ -752,6 +752,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.9.1"
+  pushwoosh_flutter:
+    dependency: "direct main"
+    description:
+      name: pushwoosh_flutter
+      sha256: "1dff1b5594ec19f0603abebe87dfe53540bb82498be7c51015ed320d67370fd6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.22"
   shared_preferences:
     dependency: "direct main"
     description:

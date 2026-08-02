@@ -51,6 +51,7 @@ dependencies:
   encrypt: ^5.0.1
   connectivity_plus: ^6.0.0
   flutter_local_notifications: ^19.5.0
+  pushwoosh_flutter: ^2.3.22
 
 dev_dependencies:
   flutter_test:
