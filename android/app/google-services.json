@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "408628842480",
+    "firebase_url": "https://app-panic-button-c2a60-default-rtdb.firebaseio.com",
     "project_id": "app-panic-button-c2a60",
     "storage_bucket": "app-panic-button-c2a60.firebasestorage.app"
   },

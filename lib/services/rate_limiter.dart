@@ -3,6 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Servicio de Rate Limiting para proteger acciones contra activaciones excesivas
 /// Permite un número máximo de activaciones dentro de un período de tiempo especificado
 class RateLimiter {
+  // MODO DESARROLLO: Cambia a 'false' para deshabilitar el rate limiting
+  // Útil para testing sin límite de intentos
+  static const bool enableRateLimit = true; // ← CAMBIA AQUÍ: true = habilitado, false = deshabilitado
+  
   // Claves para almacenamiento persistente
   static const String _timestampsKey = 'rate_limit_timestamps';
 
@@ -22,6 +26,12 @@ class RateLimiter {
     int maxAttempts = defaultMaxActivations,
     int windowMinutes = defaultWindowMinutes,
   }) async {
+    // 🔧 Si el rate limit está deshabilitado en DESARROLLO, permitir siempre
+    if (!enableRateLimit) {
+      print('[RateLimiter.canExecute] ⚠️  MODO DEBUG: Rate limit DESHABILITADO - permitiendo ejecución');
+      return true;
+    }
+    
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final windowDuration = Duration(minutes: windowMinutes);
@@ -57,9 +67,11 @@ class RateLimiter {
         updatedTimestamps,
       );
 
+      print('[RateLimiter.canExecute] ✓ Intento ${validTimestamps.length}/$maxAttempts permitido para "$action"');
       return true;
     }
 
+    print('[RateLimiter.canExecute] ✗ Límite alcanzado ($maxAttempts) para "$action"');
     return false;
   }
 
@@ -70,6 +82,18 @@ class RateLimiter {
     int maxAttempts = defaultMaxActivations,
     int windowMinutes = defaultWindowMinutes,
   }) async {
+    // 🔧 Si el rate limit está deshabilitado en DESARROLLO
+    if (!enableRateLimit) {
+      return RateLimitInfo(
+        attemptsUsed: 0,
+        maxAttempts: maxAttempts,
+        windowMinutes: windowMinutes,
+        isLimited: false,
+        timeUntilNextAttempt: null,
+        nextAvailableTime: null,
+      );
+    }
+    
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final windowDuration = Duration(minutes: windowMinutes);
