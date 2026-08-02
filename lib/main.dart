@@ -66,13 +66,16 @@ void main() async {
     // Continuar igualmente si el servicio no se inicializa
   }
   
-  // Inicializar Pushwoosh para notificaciones push remotas
+  // Inicializar Pushwoosh para notificaciones push remotas (asíncrono, sin esperar)
   try {
-    await PushwooshService.instance().initialize();
-    print('[main] PushwooshService inicializado correctamente');
+    // NO esperar (no usar await) para que la app no se bloquee
+    PushwooshService.instance().initialize().then((_) {
+      print('[main] PushwooshService inicializado correctamente (async)');
+    }).catchError((e) {
+      print('[main] ADVERTENCIA al inicializar PushwooshService: $e');
+    });
   } catch (e) {
-    print('[main] ADVERTENCIA al inicializar PushwooshService: $e');
-    // Continuar igualmente si Pushwoosh no se inicializa
+    print('[main] ERROR al invocar PushwooshService: $e');
   }
   
   runApp(const MyApp());

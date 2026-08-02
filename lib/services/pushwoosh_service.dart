@@ -71,38 +71,9 @@ class PushwooshService {
         return;
       }
 
-      // Handler cuando se recibe una notificación mientras la app está activa (foreground)
-      try {
-        instance.onPushReceived.listen((event) {
-          print('[Pushwoosh.onPushReceived] Notificación recibida en foreground');
-          try {
-            print('[Pushwoosh.onPushReceived] Payload: ${event.pushwooshMessage?.payload}');
-            print('[Pushwoosh.onPushReceived] Título: ${event.pushwooshMessage?.title}');
-          } catch (e) {
-            print('[Pushwoosh.onPushReceived] Error al procesar payload: $e');
-          }
-        });
-      } catch (e) {
-        print('[PushwooshService._setupNotificationHandlers] Error al configurar onPushReceived: $e');
-      }
-
-      // Handler cuando se toca una notificación (abre la app o la trae al foreground)
-      try {
-        instance.onPushAccepted.listen((event) {
-          print('[Pushwoosh.onPushAccepted] Notificación tocada');
-          try {
-            print('[Pushwoosh.onPushAccepted] Payload: ${event.pushwooshMessage?.payload}');
-            print('[Pushwoosh.onPushAccepted] Título: ${event.pushwooshMessage?.title}');
-          } catch (e) {
-            print('[Pushwoosh.onPushAccepted] Error al procesar payload: $e');
-          }
-
-          // Navegar a la pantalla de citas si es una notificación de cita
-          _handleNotificationNavigation(event.pushwooshMessage?.payload);
-        });
-      } catch (e) {
-        print('[PushwooshService._setupNotificationHandlers] Error al configurar onPushAccepted: $e');
-      }
+      // TODO: Configurar listeners cuando la API esté completamente verificada
+      // Por ahora, solo hacemos la inicialización básica
+      print('[PushwooshService._setupNotificationHandlers] Handlers omitidos por ahora');
     } catch (e) {
       print('[PushwooshService._setupNotificationHandlers] Error general: $e');
     }
