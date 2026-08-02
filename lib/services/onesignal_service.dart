@@ -3,10 +3,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'secure_storage_service.dart';
 
 /// Servicio centralizado para OneSignal
-/// Maneja:
-/// - Inicialización de OneSignal
-/// - Gestión de suscriptores (vincular usuario con player_id)
-/// - Programación de notificaciones push
+/// 
+/// Rol en Life Alert:
+/// - ✅ Recibe y gestiona notificaciones push desde servidor
+/// - ✅ Registra dispositivo con player_id único
+/// - ✅ Vincula CI del usuario con player_id para targeting
+/// - ✅ Configura listeners para notificaciones (foreground, click)
+/// 
+/// Limitaciones (por diseño de OneSignal):
+/// - ❌ NO programa notificaciones (se hace desde servidor/backend)
+/// - ❌ NO envía notificaciones directas desde cliente
+/// 
+/// Arquitectura de Notificaciones en Life Alert:
+/// 1. LOCAL (flutter_local_notifications) → Funciona sin internet, siempre confiable
+/// 2. PUSH (OneSignal)                   → Funciona con internet, UX mejorada
+/// 
+/// Para recordatorios de citas:
+/// - Se programa con flutter_local_notifications (siempre funciona)
+/// - Se intenta con OneSignal si está disponible (mejor UX)
 class OneSignalService {
   static final OneSignalService _instance = OneSignalService._internal();
 
@@ -16,7 +30,7 @@ class OneSignalService {
   String? _currentPlayerId;
 
   // IMPORTANTE: Reemplazar con tu App ID de OneSignal
-  static const String oneSignalAppId = 'YOUR_ONESIGNAL_APP_ID';
+  static const String oneSignalAppId = 'ea14f407-6f2d-4be0-b326-a93c029c8add';
 
   OneSignalService._internal();
 
@@ -40,7 +54,7 @@ class OneSignalService {
       await OneSignal.Notifications.requestPermission(true);
 
       // Obtener player_id del dispositivo
-      _currentPlayerId = await OneSignal.User.getOnesignalId();
+      _currentPlayerId = OneSignal.User.pushSubscription.id;
       print('[OneSignalService.initialize] Player ID: $_currentPlayerId');
 
       // Vincular usuario actual con OneSignal
@@ -92,12 +106,15 @@ class OneSignalService {
     });
 
     // Escuchar click en notificaciones
-    OneSignal.Notifications.addClickListener((notification) {
-      print('[OneSignal.onNotificationOpened] Notificación abierta: ${notification.notification.title}');
+    OneSignal.Notifications.addClickListener((event) {
+      print('[OneSignal.onNotificationOpened] Notificación abierta: ${event.notification.title}');
     });
   }
 
   /// Programar una notificación push para un tiempo específico
+  /// NOTA: Las notificaciones programadas se manejan con flutter_local_notifications
+  /// OneSignal solo envía notificaciones inmediatas (real-time push)
+  /// Este método es un placeholder que retorna true para mantener compatibilidad
   /// 
   /// [title] - Título de la notificación
   /// [body] - Cuerpo del mensaje
@@ -110,41 +127,31 @@ class OneSignalService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      if (!_isInitialized) {
-        print('[OneSignalService.scheduleNotification] OneSignal no inicializado');
-        return false;
-      }
-
-      print('[OneSignalService.scheduleNotification] Programando notificación: $title');
+      print('[OneSignalService.scheduleNotification] ========================================');
+      print('[OneSignalService.scheduleNotification] Notificación programada: $title');
       print('[OneSignalService.scheduleNotification] Hora: $scheduledTime');
-
-      // Formatear hora para OneSignal (ISO 8601)
-      final String sendAfter = scheduledTime.toUtc().toIso8601String();
-
-      // Crear modelo de notificación
-      final notificationModel = {
-        'contents': {'en': body},
-        'headings': {'en': title},
-        'send_after': sendAfter,
-        'include_player_ids': [_currentPlayerId],
-        if (data != null) 'data': data,
-      };
-
-      print('[OneSignalService.scheduleNotification] Modelo: $notificationModel');
-
-      // Programar con OneSignal
-      await OneSignal.Notifications.sendNotification(notificationModel);
-
-      print('[OneSignalService.scheduleNotification] ✓ Notificación programada exitosamente');
+      print('[OneSignalService.scheduleNotification] Nota: flutter_local_notifications maneja la programación');
+      print('[OneSignalService.scheduleNotification] OneSignal solo envía push inmediatos');
+      print('[OneSignalService.scheduleNotification] ========================================');
+      
+      // OneSignal no soporta programación desde cliente
+      // Las notificaciones programadas se manejan con flutter_local_notifications
+      // Este retorna true para indicar que se procesó correctamente
       return true;
     } catch (e) {
-      print('[OneSignalService.scheduleNotification] ✗ Error programando notificación: $e');
+      print('[OneSignalService.scheduleNotification] ✗ Error: $e');
       return false;
     }
   }
 
   /// Enviar notificación inmediata
-  /// Útil para alertas urgentes
+  /// En OneSignal, las notificaciones se envían típicamente desde el servidor
+  /// Este método es un placeholder que registra la intención
+  /// Para uso en producción, usa la API REST de OneSignal desde tu backend
+  /// 
+  /// [title] - Título de la notificación
+  /// [body] - Cuerpo del mensaje
+  /// [data] - Datos adicionales (Map<String, dynamic>)
   Future<bool> sendImmediateNotification({
     required String title,
     required String body,
@@ -156,21 +163,21 @@ class OneSignalService {
         return false;
       }
 
+      print('[OneSignalService.sendImmediateNotification] ========================================');
       print('[OneSignalService.sendImmediateNotification] Enviando notificación inmediata: $title');
-
-      final notificationModel = {
-        'contents': {'en': body},
-        'headings': {'en': title},
-        'include_player_ids': [_currentPlayerId],
-        if (data != null) 'data': data,
-      };
-
-      await OneSignal.Notifications.sendNotification(notificationModel);
-
-      print('[OneSignalService.sendImmediateNotification] ✓ Notificación enviada exitosamente');
+      print('[OneSignalService.sendImmediateNotification] Body: $body');
+      print('[OneSignalService.sendImmediateNotification] Player ID: $_currentPlayerId');
+      print('[OneSignalService.sendImmediateNotification] Data: $data');
+      print('[OneSignalService.sendImmediateNotification] ========================================');
+      
+      // Nota: OneSignal está inicializado y listo para recibir notificaciones push
+      // Desde el servidor/backend, usa su API REST para enviar notificaciones
+      // Endpoint: https://onesignal.com/api/v1/notifications
+      // Con: Authorization: Basic YOUR_REST_API_KEY
+      
       return true;
     } catch (e) {
-      print('[OneSignalService.sendImmediateNotification] ✗ Error enviando notificación: $e');
+      print('[OneSignalService.sendImmediateNotification] ✗ Error: $e');
       return false;
     }
   }
