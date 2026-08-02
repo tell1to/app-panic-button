@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
+import 'onesignal_service.dart';
 
 /// Servicio para gestionar recordatorios automáticos de citas médicas
 /// Envía notificaciones locales cuando se acerca la fecha de una cita
@@ -128,6 +129,10 @@ class AppointmentReminderService {
   /// 
   /// Programar recordatorio 24 horas antes de la cita médica
   /// Si la cita es en menos de 24 horas, programa el recordatorio en 5 minutos
+  /// 
+  /// Integración con OneSignal:
+  /// - Usa notificaciones locales como respaldo (sin conexión)
+  /// - Usa OneSignal para notificaciones push programadas (con conexión)
   Future<void> scheduleAppointmentReminder({
     required String appointmentId,
     required DateTime appointmentDateTime,
@@ -174,7 +179,7 @@ class AppointmentReminderService {
       final body = '$doctorName\n$appointmentDate a las $appointmentTime';
       final payload = 'appointment:$appointmentId'; // Payload para navegar
 
-      // Programar notificación
+      // 1️⃣ Programar notificación LOCAL (funciona sin internet)
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         appointmentId.hashCode, // ID único basado en appointmentId
         title,
@@ -199,7 +204,32 @@ class AppointmentReminderService {
         payload: payload,
       );
 
-      print('[AppointmentReminderService] ✅ Recordatorio programado:');
+      print('[AppointmentReminderService] ✅ Recordatorio LOCAL programado');
+
+      // 2️⃣ Programar notificación con OneSignal (push, requiere internet)
+      if (OneSignalService.instance.isInitialized()) {
+        final success = await OneSignalService.instance.scheduleNotification(
+          title: title,
+          body: body,
+          scheduledTime: reminderTime,
+          data: {
+            'appointmentId': appointmentId,
+            'doctorName': doctorName,
+            'appointmentDate': appointmentDate,
+            'appointmentTime': appointmentTime,
+          },
+        );
+
+        if (success) {
+          print('[AppointmentReminderService] ✅ Recordatorio ONE SIGNAL programado');
+        } else {
+          print('[AppointmentReminderService] ⚠️ Recordatorio OneSignal falló, se usará solo notificación local');
+        }
+      } else {
+        print('[AppointmentReminderService] ⚠️ OneSignal no inicializado, usando solo notificación local');
+      }
+
+      print('[AppointmentReminderService] ✅ Recordatorio programado (LOCAL + PUSH):');
       print('  - ID: $appointmentId');
       print('  - Cita: ${_formatDate(appointmentDateTime)} a las ${_formatTime(appointmentDateTime)}');
       print('  - Médico: $doctorName');
