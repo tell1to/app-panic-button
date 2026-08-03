@@ -86,16 +86,16 @@ class _SymptomsPageState extends State<SymptomsPage> {
     final double labelFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
     
     // Colores pastel: Rosado y Celeste
-    const Color pastelRosado = Color(0xFFFFB3D9);
-    const Color pastelCeleste = Color(0xFFADD8E6);
-    const Color textoOscuro = Color(0xFF5A5A7F);
+    const Color pastelRosado = Color(0xFF3B82F6);
+    const Color pastelCeleste = Color(0xFF60A5FA);
+    const Color textoOscuro = Color(0xFF1F2937);
     
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F6),
+      backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        title: Text('Registro de Síntomas', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: textoOscuro)),
+        title: Text('Registro de Síntomas', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.w700, color: textoOscuro)),
         backgroundColor: pastelRosado,
-        elevation: 0,
+        elevation: 2,
         centerTitle: false,
         flexibleSpace: Container(
           decoration: BoxDecoration(
