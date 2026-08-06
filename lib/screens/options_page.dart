@@ -7,11 +7,11 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'symptoms.dart';
-import 'services/alert_service.dart';
-import 'services/secure_storage_service.dart';
-import 'services/appointment_reminder_service.dart';
-import 'validators/validators.dart';
+import 'symptoms_page.dart';
+import '../services/alert_service.dart';
+import '../services/secure_storage_service.dart';
+import '../services/appointment_reminder_service.dart';
+import '../utils/validators/validators.dart';
 
 class OptionsPage extends StatefulWidget {
   const OptionsPage({super.key});

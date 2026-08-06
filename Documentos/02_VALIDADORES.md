@@ -1,32 +1,32 @@
-﻿# Módulo de Validadores - Documentación Completa
-**Última actualización:** 21 de julio de 2026  
-**Versión:** 1.3.47  
+# M�dulo de Validadores - Documentaci�n Completa
+**�ltima actualizaci�n:** 21 de julio de 2026  
+**Versi�n:** 1.4.60  
 **Estado:** Desarrollo
 ---
-## Índice
-1. [Descripción General](#descripción-general)
-2. [Ubicación y Estructura](#ubicación-y-estructura)
+## �ndice
+1. [Descripci�n General](#descripci�n-general)
+2. [Ubicaci�n y Estructura](#ubicaci�n-y-estructura)
 3. [Validadores Disponibles](#validadores-disponibles)
 4. [Ejemplos de Uso](#ejemplos-de-uso)
 5. [Casos de Uso Ecuador](#casos-de-uso-ecuador)
 6. [Testing](#testing)
-7. [Integración](#integración)
+7. [Integraci�n](#integraci�n)
 ---
-## Descripción General
-El módulo de validadores proporciona funciones centralizadas para validar datos de usuario. Está específicamente configurado para **Ecuador** con validación de teléfonos, cédulas y formatos locales.
-**Ubicación:** `lib/validators/validators.dart`
-**Líneas de código:** 180+
+## Descripci�n General
+El m�dulo de validadores proporciona funciones centralizadas para validar datos de usuario. Est� espec�ficamente configurado para **Ecuador** con validaci�n de tel�fonos, c�dulas y formatos locales.
+**Ubicaci�n:** `lib/validators/validators.dart`
+**L�neas de c�digo:** 180+
 **Funciones:** 8 principales
 **Estado:** Completo y testeado
-### Características Principales
-- Validación específica para Ecuador
-- Manejo de múltiples formatos
-- Normalización automática de datos
-- Mensajes de error en español
+### Caracter�sticas Principales
+- Validaci�n espec�fica para Ecuador
+- Manejo de m�ltiples formatos
+- Normalizaci�n autom�tica de datos
+- Mensajes de error en espa�ol
 - 35+ tests unitarios
 - Sin dependencias externas (solo dart:core)
 ---
-## Ubicación y Estructura
+## Ubicaci�n y Estructura
 ### Ruta de Archivo
 ```
 lib/
@@ -39,7 +39,7 @@ class Validators {
  // Constantes
  static const String ecuadorCountryCode = '+593';
  static const String ecuadorCountryPrefix = '593';
- // Métodos estáticos (sin necesidad de instanciar)
+ // M�todos est�ticos (sin necesidad de instanciar)
  static bool isValidEmail(String email)
  static bool isValidName(String name)
  static bool isValidAge(String age)
@@ -53,12 +53,12 @@ class Validators {
 ---
 ## Validadores Disponibles
 ### 1. Email Validation
-#### Función
+#### Funci�n
 ```dart
 static bool isValidEmail(String email)
 ```
-#### Descripción
-Valida direcciones de correo electrónico con formato estándar internacional.
+#### Descripci�n
+Valida direcciones de correo electr�nico con formato est�ndar internacional.
 #### Formato Aceptado
 ```
 ejemplo@dominio.com
@@ -74,10 +74,10 @@ nombre+etiqueta@servidor.org
 ```
 #### Ejemplo
 ```dart
-// Válido
+// V�lido
 Validators.isValidEmail('juan@gmail.com'); // true
 Validators.isValidEmail('maria.garcia@hotmail.com'); // true
-// Inválido
+// Inv�lido
 Validators.isValidEmail('juangmail.com'); // false
 Validators.isValidEmail('juan@'); // false
 ```
@@ -87,84 +87,84 @@ Validators.isValidEmail('juan@'); // false
 ```
 ---
 ### 2. Name Validation
-#### Función
+#### Funci�n
 ```dart
 static bool isValidName(String name)
 ```
-#### Descripción
+#### Descripci�n
 Valida nombres que solo contengan letras (incluyendo acentos) y espacios.
 #### Caracteres Permitidos
 ```
  A-Z, a-z
- Acentos: á, é, í, ó, ú, Á, É, Í, Ó, Ú
- Eñes: ñ, Ñ
+ Acentos: �, �, �, �, �, �, �, �, �, �
+ E�es: �, �
  Espacios simples
- Caracteres especiales alemanes: ü, Ü
+ Caracteres especiales alemanes: �, �
 ```
 #### Caracteres Rechazados
 ```
- Números (0-9)
+ N�meros (0-9)
  Guiones
  Puntos
- Símbolos especiales (@, #, $, etc)
+ S�mbolos especiales (@, #, $, etc)
 ```
 #### Ejemplo
 ```dart
-// Válido
-Validators.isValidName('Juan García'); // true
-Validators.isValidName('María José López'); // true
-Validators.isValidName('José María'); // true
-Validators.isValidName('Ñandú'); // true
-// Inválido
+// V�lido
+Validators.isValidName('Juan Garc�a'); // true
+Validators.isValidName('Mar�a Jos� L�pez'); // true
+Validators.isValidName('Jos� Mar�a'); // true
+Validators.isValidName('�and�'); // true
+// Inv�lido
 Validators.isValidName('Juan123'); // false
 Validators.isValidName('Juan-Pablo'); // false
-Validators.isValidName('María.García'); // false
+Validators.isValidName('Mar�a.Garc�a'); // false
 Validators.isValidName('123'); // false
 ```
 #### Regex Usado
 ```regex
-^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$
+^[A-Za-z��������������\s]+$
 ```
 ---
 ### 3. Age Validation
-#### Función
+#### Funci�n
 ```dart
 static bool isValidAge(String age)
 ```
-#### Descripción
-Valida edad como número entre 1 y 120 años.
-#### Rango Válido
+#### Descripci�n
+Valida edad como n�mero entre 1 y 120 a�os.
+#### Rango V�lido
 ```
-1 - 120 años
+1 - 120 a�os
 ```
 #### Ejemplo
 ```dart
-// Válido
+// V�lido
 Validators.isValidAge('25'); // true
-Validators.isValidAge('1'); // true (recién nacido)
-Validators.isValidAge('120'); // true (máximo permitido)
-// Inválido
+Validators.isValidAge('1'); // true (reci�n nacido)
+Validators.isValidAge('120'); // true (m�ximo permitido)
+// Inv�lido
 Validators.isValidAge('0'); // false (menor que 1)
 Validators.isValidAge('121'); // false (mayor que 120)
 Validators.isValidAge('-5'); // false (negativo)
-Validators.isValidAge('abc'); // false (no es número)
+Validators.isValidAge('abc'); // false (no es n�mero)
 ```
 ---
-### 4. Phone Validation (Ecuador Específico)
-#### Función
+### 4. Phone Validation (Ecuador Espec�fico)
+#### Funci�n
 ```dart
 static bool isValidPhone(String phone)
 ```
-#### Descripción
-**Valida teléfonos móviles de Ecuador únicamente.** Este es el validador más importante para el proyecto.
-#### Características de Ecuador
-Los números móviles en Ecuador tienen 10 dígitos:
+#### Descripci�n
+**Valida tel�fonos m�viles de Ecuador �nicamente.** Este es el validador m�s importante para el proyecto.
+#### Caracter�sticas de Ecuador
+Los n�meros m�viles en Ecuador tienen 10 d�gitos:
 - **Formato local:** Comienzan con `09`
-- **Formato internacional:** Código `+593` o `593`
-- **Rango válido:** 0960000000 - 0999999999
+- **Formato internacional:** C�digo `+593` o `593`
+- **Rango v�lido:** 0960000000 - 0999999999
 #### Formatos Aceptados
 ```dart
-// Formato local (10 dígitos)
+// Formato local (10 d�gitos)
 Validators.isValidPhone('0963522505'); // true
 // Formato local con espacios
 Validators.isValidPhone('09 6352 2505'); // true
@@ -179,68 +179,68 @@ Validators.isValidPhone('+593 963 522 505'); // true
 ```
 #### Formatos Rechazados
 ```dart
-// Otros países
+// Otros pa�ses
 Validators.isValidPhone('+11234567890'); // false (USA)
 Validators.isValidPhone('+573105555555'); // false (Colombia)
-Validators.isValidPhone('+51987654321'); // false (Perú)
+Validators.isValidPhone('+51987654321'); // false (Per�)
 // Formato incorrecto para Ecuador
 Validators.isValidPhone('08XXXXXXXX'); // false (comienza con 08)
 Validators.isValidPhone('07XXXXXXXX'); // false (comienza con 07)
-Validators.isValidPhone('963522505'); // false (9 dígitos)
-Validators.isValidPhone('09635225051'); // false (11 dígitos)
-// Formato local inválido
-Validators.isValidPhone('0263522505'); // false (no es móvil)
-Validators.isValidPhone('0563522505'); // false (no es móvil)
+Validators.isValidPhone('963522505'); // false (9 d�gitos)
+Validators.isValidPhone('09635225051'); // false (11 d�gitos)
+// Formato local inv�lido
+Validators.isValidPhone('0263522505'); // false (no es m�vil)
+Validators.isValidPhone('0563522505'); // false (no es m�vil)
 ```
 #### Ejemplo Completo
 ```dart
-// Validar teléfono ingresado por usuario
+// Validar tel�fono ingresado por usuario
 String phone = '09 6352 2505';
 if (Validators.isValidPhone(phone)) {
  // Proceder a guardar
- print('Teléfono Ecuador válido');
+ print('Tel�fono Ecuador v�lido');
 } else {
  // Mostrar error
- print('El teléfono debe ser un número móvil de Ecuador');
+ print('El tel�fono debe ser un n�mero m�vil de Ecuador');
 }
 ```
 ---
 ### 5. Password Validation
-#### Función
+#### Funci�n
 ```dart
 static bool isValidPassword(String password)
 ```
-#### Descripción
-Valida contraseñas con requisitos de seguridad mínimos.
+#### Descripci�n
+Valida contrase�as con requisitos de seguridad m�nimos.
 #### Requisitos
-| Requisito | Descripción |
+| Requisito | Descripci�n |
 |-----------|-------------|
-| **Longitud** | Mínimo 8 caracteres |
-| **Mayúscula** | Al menos 1 letra mayúscula (A-Z) |
-| **Minúscula** | Al menos 1 letra minúscula (a-z) |
-| **Número** | Al menos 1 dígito (0-9) |
-| **Especial** | Al menos 1 carácter especial (!@#$%^&*) |
+| **Longitud** | M�nimo 8 caracteres |
+| **May�scula** | Al menos 1 letra may�scula (A-Z) |
+| **Min�scula** | Al menos 1 letra min�scula (a-z) |
+| **N�mero** | Al menos 1 d�gito (0-9) |
+| **Especial** | Al menos 1 car�cter especial (!@#$%^&*) |
 #### Ejemplo
 ```dart
-// Válido
+// V�lido
 Validators.isValidPassword('MyPass123!'); // true
 Validators.isValidPassword('Secure@2025Pass'); // true
 Validators.isValidPassword('Complex#Pass99'); // true
-// Inválido
-Validators.isValidPassword('mypass123'); // false (sin mayúscula)
-Validators.isValidPassword('MYPASS123'); // false (sin minúscula)
-Validators.isValidPassword('MyPassword'); // false (sin número)
+// Inv�lido
+Validators.isValidPassword('mypass123'); // false (sin may�scula)
+Validators.isValidPassword('MYPASS123'); // false (sin min�scula)
+Validators.isValidPassword('MyPassword'); // false (sin n�mero)
 Validators.isValidPassword('MyPass123'); // false (sin especial)
 Validators.isValidPassword('Short@1'); // false (menos de 8)
 ```
 ---
 ### 6. Phone Normalization
-#### Función
+#### Funci�n
 ```dart
 static String normalizePhoneNumber(String phone)
 ```
-#### Descripción
-Convierte cualquier formato de teléfono Ecuador a formato local estándar (09XXXXXXXX).
+#### Descripci�n
+Convierte cualquier formato de tel�fono Ecuador a formato local est�ndar (09XXXXXXXX).
 #### Ejemplo
 ```dart
 // Todos estos retornan: "0963522505"
@@ -250,9 +250,9 @@ Validators.normalizePhoneNumber('+593963522505'); // "0963522505"
 Validators.normalizePhoneNumber('593963522505'); // "0963522505"
 Validators.normalizePhoneNumber('0963522505'); // "0963522505"
 ```
-#### Uso Práctico
+#### Uso Pr�ctico
 ```dart
-// Guardar teléfono normalizado en base de datos
+// Guardar tel�fono normalizado en base de datos
 String userPhone = '+593 963 522 505';
 String normalized = Validators.normalizePhoneNumber(userPhone);
 // normalized = "0963522505"
@@ -260,12 +260,12 @@ await SecureStorageService.saveEmergencyContact(normalized);
 ```
 ---
 ### 7. International Format
-#### Función
+#### Funci�n
 ```dart
 static String getInternationalFormat(String phone)
 ```
-#### Descripción
-Convierte teléfono Ecuador a formato internacional con código de país.
+#### Descripci�n
+Convierte tel�fono Ecuador a formato internacional con c�digo de pa�s.
 #### Ejemplo
 ```dart
 // Todas estas retornan: "+593963522505"
@@ -273,7 +273,7 @@ Validators.getInternationalFormat('09 6352 2505'); // "+593963522505"
 Validators.getInternationalFormat('0963522505'); // "+593963522505"
 Validators.getInternationalFormat('593963522505'); // "+593963522505"
 ```
-#### Uso Práctico
+#### Uso Pr�ctico
 ```dart
 // Para llamadas internacionales o WhatsApp
 String phone = '0963522505';
@@ -285,11 +285,11 @@ await launchUrl(Uri.parse(url));
 ```
 ---
 ### 8. Local Format
-#### Función
+#### Funci�n
 ```dart
 static String getLocalFormat(String phone)
 ```
-#### Descripción
+#### Descripci�n
 Convierte cualquier formato a formato local de Ecuador (09XXXXXXXX).
 #### Ejemplo
 ```dart
@@ -312,15 +312,15 @@ class _SenttingsPageState extends State<SenttingsPage> {
  void _validatePhone() {
  String phone = phoneController.text;
  if (phone.isEmpty) {
- setState(() => errorMessage = 'El teléfono es obligatorio');
+ setState(() => errorMessage = 'El tel�fono es obligatorio');
  return;
  }
  if (!Validators.isValidPhone(phone)) {
  setState(() => errorMessage =
- 'Ingrese un teléfono móvil válido de Ecuador (Ej: 0963522505)');
+ 'Ingrese un tel�fono m�vil v�lido de Ecuador (Ej: 0963522505)');
  return;
  }
- // Teléfono válido, proceder
+ // Tel�fono v�lido, proceder
  setState(() => errorMessage = null);
  String normalized = Validators.normalizePhoneNumber(phone);
  _savePhoneSecurely(normalized);
@@ -330,7 +330,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
  return TextField(
  controller: phoneController,
  decoration: InputDecoration(
- labelText: 'Teléfono',
+ labelText: 'Tel�fono',
  errorText: errorMessage,
  hintText: 'Ej: 09 6352 2505',
  ),
@@ -339,7 +339,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
  }
 }
 ```
-### Caso 2: Validar Múltiples Campos
+### Caso 2: Validar M�ltiples Campos
 ```dart
 bool validateAllFields(
  String name,
@@ -349,16 +349,16 @@ bool validateAllFields(
 ) {
  List<String> errors = [];
  if (!Validators.isValidName(name)) {
- errors.add('Nombre inválido');
+ errors.add('Nombre inv�lido');
  }
  if (!Validators.isValidEmail(email)) {
- errors.add('Email inválido');
+ errors.add('Email inv�lido');
  }
  if (!Validators.isValidAge(age)) {
  errors.add('Edad debe estar entre 1 y 120');
  }
  if (!Validators.isValidPhone(phone)) {
- errors.add('Teléfono Ecuador inválido');
+ errors.add('Tel�fono Ecuador inv�lido');
  }
  if (errors.isNotEmpty) {
  print('Errores encontrados: ${errors.join(", ")}');
@@ -369,7 +369,7 @@ bool validateAllFields(
 ```
 ### Caso 3: Transformar Datos
 ```dart
-// Guardar teléfono en diferentes formatos según necesidad
+// Guardar tel�fono en diferentes formatos seg�n necesidad
 String phone = '+593 963 522 505';
 String local = Validators.getLocalFormat(phone);
 // local = "0963522505" (para guardado)
@@ -382,13 +382,13 @@ await launchUrl(Uri.parse('tel:$international'));
 ```
 ---
 ## Casos de Uso Ecuador
-### Escenario 1: Usuario Ingresa Teléfono en Senttings
+### Escenario 1: Usuario Ingresa Tel�fono en Senttings
 ```dart
 // Usuario ingresa: "09 6352 2505"
 String userInput = "09 6352 2505";
 // Paso 1: Validar
 if (!Validators.isValidPhone(userInput)) {
- showError('Teléfono Ecuador inválido');
+ showError('Tel�fono Ecuador inv�lido');
  return;
 }
 // Paso 2: Normalizar
@@ -397,7 +397,7 @@ String normalized = Validators.normalizePhoneNumber(userInput);
 // Paso 3: Guardar
 await SecureStorageService.saveEmergencyContact(normalized);
 ```
-### Escenario 2: Mostrar Teléfono Guardado
+### Escenario 2: Mostrar Tel�fono Guardado
 ```dart
 // Recuperar del storage
 String? phone = await SecureStorageService.getEmergencyContact();
@@ -410,7 +410,7 @@ String display = "${phone?.substring(0, 2)} ${phone?.substring(2, 5)} "
 String callFormat = Validators.getInternationalFormat(phone);
 // callFormat = "+593963522505"
 ```
-### Escenario 3: Validación en Formulario
+### Escenario 3: Validaci�n en Formulario
 ```dart
 class RegistrationForm extends StatefulWidget {
  @override
@@ -420,19 +420,19 @@ class _RegistrationFormState extends State<RegistrationForm> {
  final _formKey = GlobalKey<FormState>();
  String? validatePhone(String? value) {
  if (value == null || value.isEmpty) {
- return 'Teléfono requerido';
+ return 'Tel�fono requerido';
  }
  if (!Validators.isValidPhone(value)) {
- return 'Teléfono móvil de Ecuador inválido';
+ return 'Tel�fono m�vil de Ecuador inv�lido';
  }
- return null; // Válido
+ return null; // V�lido
  }
  String? validateEmail(String? value) {
  if (value == null || value.isEmpty) {
  return 'Email requerido';
  }
  if (!Validators.isValidEmail(value)) {
- return 'Email inválido';
+ return 'Email inv�lido';
  }
  return null;
  }
@@ -443,7 +443,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
  child: Column(
  children: [
  TextFormField(
- decoration: InputDecoration(labelText: 'Teléfono'),
+ decoration: InputDecoration(labelText: 'Tel�fono'),
  validator: validatePhone,
  ),
  TextFormField(
@@ -453,7 +453,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
  ElevatedButton(
  onPressed: () {
  if (_formKey.currentState!.validate()) {
- print('Formulario válido');
+ print('Formulario v�lido');
  }
  },
  child: Text('Enviar'),
@@ -467,7 +467,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
 ---
 ## Testing
 ### Tests Unitarios
-Ubicación: `test/validators_ecuador_test.dart`
+Ubicaci�n: `test/validators_ecuador_test.dart`
 **Total de tests:** 35 **TODOS PASANDO**
 ### Ejemplos de Tests
 ```dart
@@ -492,7 +492,7 @@ void main() {
  test('Valida formato internacional', () {
  expect(Validators.isValidPhone('+593963522505'), true);
  });
- test('Rechaza otros países', () {
+ test('Rechaza otros pa�ses', () {
  expect(Validators.isValidPhone('+11234567890'), false);
  });
  });
@@ -504,13 +504,13 @@ cd "c:\Users\MateoM\Desktop\Proyecto-app\flutter_application_1"
 flutter test test/validators_ecuador_test.dart
 ```
 ---
-## Integración
-### Integración en main.dart
+## Integraci�n
+### Integraci�n en main.dart
 ```dart
 import 'validators/validators.dart';
 // En InicioPage
 void _setupUser() {
- // Validar teléfono antes de guardar
+ // Validar tel�fono antes de guardar
  String userPhone = '09 6352 2505';
  if (Validators.isValidPhone(userPhone)) {
  String normalized = Validators.normalizePhoneNumber(userPhone);
@@ -518,16 +518,16 @@ void _setupUser() {
  }
 }
 ```
-### Integración en senttings.dart
+### Integraci�n en senttings.dart
 ```dart
 import 'validators/validators.dart';
 import 'services/secure_storage_service.dart';
-// En el diálogo de guardar contacto
+// En el di�logo de guardar contacto
 Future<void> _saveEmergencyContact() async {
  String phone = phoneController.text;
  // Validar
  if (!Validators.isValidPhone(phone)) {
- _showError('Teléfono Ecuador inválido');
+ _showError('Tel�fono Ecuador inv�lido');
  return;
  }
  // Normalizar
@@ -537,21 +537,21 @@ Future<void> _saveEmergencyContact() async {
  _showSuccess('Contacto guardado');
 }
 ```
-### Integración en options.dart
+### Integraci�n en options.dart
 ```dart
-// Para validar datos médicos
+// Para validar datos m�dicos
 if (!Validators.isValidName(doctorName)) {
- _showError('Nombre inválido');
+ _showError('Nombre inv�lido');
  return;
 }
 if (!Validators.isValidEmail(doctorEmail)) {
- _showError('Email inválido');
+ _showError('Email inv�lido');
  return;
 }
 ```
 ---
-## Referencia Rápida
-| Función | Entrada | Salida | Ecuador |
+## Referencia R�pida
+| Funci�n | Entrada | Salida | Ecuador |
 |---------|---------|--------|---------|
 | `isValidEmail(e)` | string | bool | |
 | `isValidName(n)` | string | bool | |
@@ -562,7 +562,7 @@ if (!Validators.isValidEmail(doctorEmail)) {
 | `getInternationalFormat(p)` | string | string | |
 | `getLocalFormat(p)` | string | string | |
 ---
-## Tecnologías Relacionadas
+## Tecnolog�as Relacionadas
 ### Firebase
 - No requiere Firebase directamente
 - Validadores se usan antes de enviar a Firebase
@@ -570,31 +570,32 @@ if (!Validators.isValidEmail(doctorEmail)) {
 - Usa solo `dart:core` y expresiones regulares
 - Compatible con todos los widgets
 ### Android
-- Compatible con números móviles Android de Ecuador
-- Validación de permisos de teléfono
+- Compatible con n�meros m�viles Android de Ecuador
+- Validaci�n de permisos de tel�fono
 ### iOS
-- Compatible con números móviles iOS de Ecuador
+- Compatible con n�meros m�viles iOS de Ecuador
 ### Dependencias
-- **phone_numbers_parser** - Para análisis avanzado de teléfonos
+- **phone_numbers_parser** - Para an�lisis avanzado de tel�fonos
 - No requiere otras dependencias
 ---
-## Checklist de Implementación
+## Checklist de Implementaci�n
 - Clase Validators creada
-- 8 métodos implementados
-- Específico para Ecuador
-- Comentarios en español
+- 8 m�todos implementados
+- Espec�fico para Ecuador
+- Comentarios en espa�ol
 - 35 tests unitarios
-- Documentación completa
+- Documentaci�n completa
 - Integrado en main.dart
 - Integrado en senttings.dart
 - Ejemplos de uso incluidos
 ---
-## Próximos Pasos
-1. Para integración con servicios: Ver `04_ARCHIVOS_SERVICIOS.md`
+## Pr�ximos Pasos
+1. Para integraci�n con servicios: Ver `04_ARCHIVOS_SERVICIOS.md`
 2. Para archivos principales: Ver `01_ARCHIVOS_PRINCIPALES.md`
 3. Para permisos requeridos: Ver `05_PERMISOS_REQUERIDOS.md`
 4. Para ver ejemplos vivos: Abrir `lib/EJEMPLOS_FASE_1.dart`
 ---
-**Última actualización:** 21 de julio de 2026  
-**Versión:** 1.3.47  
+**�ltima actualizaci�n:** 21 de julio de 2026  
+**Versi�n:** 1.4.60  
 **Estado:** Desarrollo
+

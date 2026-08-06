@@ -707,5 +707,5 @@ La arquitectura en 4 capas proporciona:
 El proyecto está **listo para crecer** manteniendo la calidad del código.
 ---
 **Última actualización:** 21 de julio de 2026
-**Versión:** 1.3.47
+**Versión:** 1.4.60
 **Estado:** Desarrollo

@@ -6,9 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_selector/file_selector.dart';
 
 // Importar validadores y servicio de almacenamiento seguro
-import 'validators/validators.dart';
-import 'services/secure_storage_service.dart';
-import 'preferences.dart';
+import '../utils/validators/validators.dart';
+import '../services/secure_storage_service.dart';
+import '../utils/preferences.dart';
 
 class SenttingsPage extends StatefulWidget {
   const SenttingsPage({super.key});
@@ -726,7 +726,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
               child: ListTile(
                 leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.phone_android, color: Colors.black54)),
                 title: const Text('Versión de la app', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('1.3.55', style: TextStyle(fontSize: 13)),
+                subtitle: const Text('1.4.60', style: TextStyle(fontSize: 13)),
               ),
             ),
 

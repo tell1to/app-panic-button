@@ -2,8 +2,8 @@
 // Copiar y adaptar estos ejemplos en tu código
 
 import 'package:flutter/material.dart';
-import 'validators/validators.dart';
-import 'services/secure_storage_service.dart';
+import '../utils/validators/validators.dart';
+import '../services/secure_storage_service.dart';
 
 // ============================================================================
 // 1. VALIDAR NÚMEROS TELEFÓNICOS DE ECUADOR

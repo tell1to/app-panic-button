@@ -6,16 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
-import 'options.dart';
-import 'senttings.dart';
-import 'preferences.dart';
-import 'validators/validators.dart';
+import 'screens/options_page.dart';
+import 'screens/settings_page.dart';
+import 'utils/preferences.dart';
+import 'utils/validators/validators.dart';
 import 'services/rate_limiter.dart';
 import 'services/firebase_service.dart';
 import 'services/alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/appointment_reminder_service.dart';
-import 'tutorial_screen.dart';
+import 'screens/tutorial_screen.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();

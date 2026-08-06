@@ -8,8 +8,8 @@
 /// - Firebase Realtime Database (almacenamiento de alertas)
 
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'services/firebase_service.dart';
-import 'services/alert_service.dart';
+import '../services/firebase_service.dart';
+import '../services/alert_service.dart';
 
 // ============================================================================
 // EJEMPLO 1: Firebase Analytics - Rastrear eventos

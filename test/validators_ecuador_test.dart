@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/validators/validators.dart';
+import 'package:flutter_application_1/utils/validators/validators.dart';
 
 void main() {
   group('Ecuador Phone Validation Tests', () {
