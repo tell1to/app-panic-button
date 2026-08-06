@@ -15,6 +15,7 @@ import 'services/firebase_service.dart';
 import 'services/alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/appointment_reminder_service.dart';
+import 'tutorial_screen.dart';
 
 // Global key to access OptionsPage state so other pages (Inicio) can add alerts
 final GlobalKey optionsPageKey = GlobalKey();
@@ -67,18 +68,63 @@ void main() async {
   
   runApp(const MyApp());
 }
-class MyApp extends StatelessWidget {
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _tutorialCompleted = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkTutorialStatus();
+  }
+
+  Future<void> _checkTutorialStatus() async {
+    final completed = await TutorialScreen.isTutorialCompleted();
+    setState(() {
+      _tutorialCompleted = completed;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return MaterialApp(
+        title: 'App de Emergencia',
+        theme: ThemeData(
+          primarySwatch: Colors.red,
+        ),
+        home: Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
     return MaterialApp(
       title: 'App de Emergencia',
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
       navigatorKey: NotificationService.navigatorKey,
-      home: const HomeScreen(),
+      home: _tutorialCompleted
+          ? const HomeScreen()
+          : TutorialScreen(
+              onTutorialComplete: () {
+                setState(() {
+                  _tutorialCompleted = true;
+                });
+              },
+            ),
     );
   }
 }
