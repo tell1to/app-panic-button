@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/services/rate_limiter.dart';
-
+//Arreglar prueba
 void main() {
   group('Rate Limiter Tests', () {
     setUp(() async {
