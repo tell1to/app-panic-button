@@ -2,7 +2,7 @@
 
 **Fecha de Creación:** Agosto 2026  
 **Estado:** Completado ✅  
-**Total de Tests:** 112 (97 Validadores + 15 Widget Tests + 18 Rate Limiter)  
+**Total de Tests:** 130 (97 Validadores + 15 Widget Tests + 18 Rate Limiter)  
 **Cobertura:** 100% PASANDO
 
 ---
@@ -295,7 +295,7 @@ PASS: Scaffold count consistente tras múltiples pumps
 
 ---
 
-### 🛡️ Rate Limiter Tests (18 Tests - Pre-existentes)
+### 🛡️ Rate Limiter Tests (18 Tests)
 
 **Archivo:** `test/rate_limiter_test.dart`
 
@@ -307,7 +307,11 @@ Estos tests validan el servicio de rate limiting para botón de pánico:
 - ✅ Obtención de información
 - ✅ Persistencia de datos
 
-**No fueron modificados en este plan.**
+**Cambios Realizados en Este Plan:**
+- ✅ Corregidos parámetros: `windowHours` → `windowMinutes`
+- ✅ Convertidos valores: 1 hora = 60 min, 3 horas = 180 min, 365 días = 525600 min
+- ✅ Actualizadas variables locales en tests de pánico
+- ✅ **Resultado: 18/18 tests PASANDO**
 
 ---
 
@@ -354,10 +358,10 @@ flutter test --concurrency=4
 
 | Comando | Tiempo | Tests |
 |---------|--------|-------|
-| `flutter test` | ~2 segundos | 112 total |
+| `flutter test` | ~1.5 segundos | 130 total |
 | `flutter test test/validators_ecuador_test.dart` | ~0.5 segundos | 97 |
 | `flutter test test/widget_test.dart` | ~1.2 segundos | 15 |
-| `flutter test test/rate_limiter_test.dart` | ~0.3 segundos | 18 |
+| `flutter test test/rate_limiter_test.dart` | ~0.5 segundos | 18 |
 
 ---
 
@@ -372,12 +376,12 @@ flutter test --concurrency=4
 00:00 +2: Valid local format: 0963522505
 00:00 +3: Valid with spaces: 09 6352 2505
 ...
-[Lista de 112 tests pasando]
+[Lista de 130 tests pasando]
 ...
-00:00 +112: All tests passed!
+00:01 +130: All tests passed!
 
 ════════════════════════════════════════════════════════════
-00:00 +112: All tests passed!
+00:01 +130: All tests passed!
 ════════════════════════════════════════════════════════════
 ```
 
@@ -597,11 +601,12 @@ jobs:
 
 | Métrica | Valor |
 |---------|-------|
-| **Total de Tests** | 112 ✅ |
-| **Tests Pasando** | 112 (100%) ✅ |
-| **Tiempo Ejecución** | ~2 segundos |
+| **Total de Tests** | 130 ✅ |
+| **Tests Pasando** | 130 (100%) ✅ |
+| **Tiempo Ejecución** | ~1.5 segundos |
 | **Cobertura de Validadores** | 6 categorías (97 tests) |
 | **Cobertura de Widgets** | 5 categorías (15 tests) |
+| **Cobertura de Rate Limiter** | 8 categorías (18 tests) |
 | **Casos Positivos** | 77 |
 | **Casos Negativos** | 40 |
 | **Edge Cases** | 13 |
