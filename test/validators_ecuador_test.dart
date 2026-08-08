@@ -180,38 +180,262 @@ void main() {
       });
     });
 
-    // Test other validators (should still work)
-    group('Other Validators', () {
-      test('Valid email', () {
+    // Email Validation Tests
+    group('Email Validation Tests', () {
+      test('Valid email: user@example.com', () {
         expect(Validators.isValidEmail('user@example.com'), true);
       });
 
-      test('Invalid email', () {
-        expect(Validators.isValidEmail('invalid-email'), false);
+      test('Valid email: juan.garcia@gmail.com', () {
+        expect(Validators.isValidEmail('juan.garcia@gmail.com'), true);
       });
 
-      test('Valid name', () {
+      test('Valid email: test.mail+tag@domain.co.uk', () {
+        expect(Validators.isValidEmail('test.mail+tag@domain.co.uk'), true);
+      });
+
+      test('Valid email: contact@empresa.ec', () {
+        expect(Validators.isValidEmail('contact@empresa.ec'), true);
+      });
+
+      test('Invalid: empty string', () {
+        expect(Validators.isValidEmail(''), false);
+      });
+
+      test('Invalid: no @ symbol', () {
+        expect(Validators.isValidEmail('invalidemail.com'), false);
+      });
+
+      test('Invalid: no domain', () {
+        expect(Validators.isValidEmail('user@'), false);
+      });
+
+      test('Invalid: no local part', () {
+        expect(Validators.isValidEmail('@example.com'), false);
+      });
+
+      test('Invalid: multiple @ symbols', () {
+        expect(Validators.isValidEmail('user@@example.com'), false);
+      });
+
+      test('Invalid: spaces in email', () {
+        expect(Validators.isValidEmail('user @example.com'), false);
+      });
+
+      test('Invalid: no extension', () {
+        expect(Validators.isValidEmail('user@example'), false);
+      });
+
+      test('Invalid: special chars in domain', () {
+        expect(Validators.isValidEmail('user@exam ple.com'), false);
+      });
+    });
+
+    // Name Validation Tests
+    group('Name Validation Tests', () {
+      test('Valid name: Juan García', () {
         expect(Validators.isValidName('Juan García'), true);
       });
 
-      test('Invalid name - numbers', () {
+      test('Valid name: María José', () {
+        expect(Validators.isValidName('María José'), true);
+      });
+
+      test('Valid name: José Luis Pérez', () {
+        expect(Validators.isValidName('José Luis Pérez'), true);
+      });
+
+      test('Valid name: Ana', () {
+        expect(Validators.isValidName('Ana'), true);
+      });
+
+      test('Valid name: with accents Ángela Álvarez', () {
+        expect(Validators.isValidName('Ángela Álvarez'), true);
+      });
+
+      test('Valid name: with ñ Peña Nieto', () {
+        expect(Validators.isValidName('Peña Nieto'), true);
+      });
+
+      test('Valid name: with ü Müller', () {
+        expect(Validators.isValidName('Müller'), true);
+      });
+
+      test('Invalid: contains numbers', () {
         expect(Validators.isValidName('Juan123'), false);
       });
 
-      test('Valid age', () {
+      test('Invalid: contains special chars', () {
+        expect(Validators.isValidName('Juan@García'), false);
+      });
+
+      test('Invalid: only spaces', () {
+        expect(Validators.isValidName('   '), false);
+      });
+
+      test('Invalid: empty string', () {
+        expect(Validators.isValidName(''), false);
+      });
+
+      test('Invalid: contains symbols', () {
+        expect(Validators.isValidName('Juan-García!'), false);
+      });
+    });
+
+    // Age Validation Tests
+    group('Age Validation Tests', () {
+      test('Valid age: 25', () {
         expect(Validators.isValidAge('25'), true);
       });
 
-      test('Invalid age - under 1', () {
+      test('Valid age: 1 minimum', () {
+        expect(Validators.isValidAge('1'), true);
+      });
+
+      test('Valid age: 120 maximum', () {
+        expect(Validators.isValidAge('120'), true);
+      });
+
+      test('Valid age: 18', () {
+        expect(Validators.isValidAge('18'), true);
+      });
+
+      test('Valid age: 65', () {
+        expect(Validators.isValidAge('65'), true);
+      });
+
+      test('Invalid: 0 below minimum', () {
         expect(Validators.isValidAge('0'), false);
       });
 
-      test('Valid password', () {
+      test('Invalid: 121 above maximum', () {
+        expect(Validators.isValidAge('121'), false);
+      });
+
+      test('Invalid: negative number', () {
+        expect(Validators.isValidAge('-5'), false);
+      });
+
+      test('Invalid: non-numeric', () {
+        expect(Validators.isValidAge('twenty-five'), false);
+      });
+
+      test('Invalid: empty string', () {
+        expect(Validators.isValidAge(''), false);
+      });
+
+      test('Invalid: decimal number', () {
+        expect(Validators.isValidAge('25.5'), false);
+      });
+
+      test('Invalid: very large number', () {
+        expect(Validators.isValidAge('999'), false);
+      });
+    });
+
+    // Password Validation Tests
+    group('Password Validation Tests', () {
+      test('Valid password: SecurePass123!', () {
         expect(Validators.isValidPassword('SecurePass123!'), true);
       });
 
-      test('Invalid password - too short', () {
+      test('Valid password: MyPassword@2024', () {
+        expect(Validators.isValidPassword('MyPassword@2024'), true);
+      });
+
+      test('Valid password: Complex\$Pass99', () {
+        expect(Validators.isValidPassword('Complex\$Pass99'), true);
+      });
+
+      test('Valid password: Secure&Pass01', () {
+        expect(Validators.isValidPassword('Secure&Pass01'), true);
+      });
+
+      test('Valid password: TestPassword*88', () {
+        expect(Validators.isValidPassword('TestPassword*88'), true);
+      });
+
+      test('Valid password: Strong?Pass777', () {
+        expect(Validators.isValidPassword('Strong?Pass777'), true);
+      });
+
+      test('Valid password: Super%Pass444', () {
+        expect(Validators.isValidPassword('Super%Pass444'), true);
+      });
+
+      test('Invalid: too short Pass1!', () {
         expect(Validators.isValidPassword('Pass1!'), false);
+      });
+
+      test('Invalid: no uppercase', () {
+        expect(Validators.isValidPassword('password123!'), false);
+      });
+
+      test('Invalid: no number', () {
+        expect(Validators.isValidPassword('SecurePass!'), false);
+      });
+
+      test('Invalid: no special char', () {
+        expect(Validators.isValidPassword('SecurePass123'), false);
+      });
+
+      test('Invalid: empty string', () {
+        expect(Validators.isValidPassword(''), false);
+      });
+
+      test('Invalid: spaces in password', () {
+        expect(Validators.isValidPassword('Secure Pass!1'), false);
+      });
+    });
+
+    // String Length Validation Tests
+    group('String Length Validation Tests', () {
+      test('isNotEmpty: valid string', () {
+        expect(Validators.isNotEmpty('hello'), true);
+      });
+
+      test('isNotEmpty: empty string', () {
+        expect(Validators.isNotEmpty(''), false);
+      });
+
+      test('isNotEmpty: only spaces', () {
+        expect(Validators.isNotEmpty('   '), false);
+      });
+
+      test('hasMinLength: meets minimum', () {
+        expect(Validators.hasMinLength('hello', 5), true);
+      });
+
+      test('hasMinLength: below minimum', () {
+        expect(Validators.hasMinLength('hi', 5), false);
+      });
+
+      test('hasMaxLength: within maximum', () {
+        expect(Validators.hasMaxLength('hello', 10), true);
+      });
+
+      test('hasMaxLength: exceeds maximum', () {
+        expect(Validators.hasMaxLength('hello world', 5), false);
+      });
+
+      test('hasValidLength: within range', () {
+        expect(Validators.hasValidLength('hello', 3, 10), true);
+      });
+
+      test('hasValidLength: below range', () {
+        expect(Validators.hasValidLength('hi', 3, 10), false);
+      });
+
+      test('hasValidLength: exceeds range', () {
+        expect(Validators.hasValidLength('hello world!!!', 3, 10), false);
+      });
+
+      test('hasValidLength: exact minimum', () {
+        expect(Validators.hasValidLength('abc', 3, 10), true);
+      });
+
+      test('hasValidLength: exact maximum', () {
+        expect(Validators.hasValidLength('abcdefghij', 3, 10), true);
       });
     });
   });
