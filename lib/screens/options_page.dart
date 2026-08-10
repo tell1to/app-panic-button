@@ -1052,7 +1052,7 @@ class _OptionsPageState extends State<OptionsPage> {
                               const SizedBox(height: 6),
                               Text(_appointments[i]['date'] ?? '', style: const TextStyle(color: Colors.black54)),
                               Text(_appointments[i]['time'] ?? '', style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                              Text('🔔 ${_formatAlertMinutes((_appointments[i]['alertMinutes'] as int?) ?? 1440)}', style: const TextStyle(color: Colors.green, fontSize: 11)),
+                              //Text('🔔 ${_formatAlertMinutes((_appointments[i]['alertMinutes'] as int?) ?? 1440)}', style: const TextStyle(color: Colors.green, fontSize: 11)),
                             ],
                           ),
                           trailing: PopupMenuButton<String>(
@@ -1116,7 +1116,7 @@ class _OptionsPageState extends State<OptionsPage> {
                                                       }
                                                     },
                                                   ),
-                                                  const SizedBox(height: 12),
+                                                  /*const SizedBox(height: 12),
                                                   TextField(controller: detailCtrl, decoration: const InputDecoration(labelText: 'Detalle (Opcional)', isDense: true), maxLines: 3),
                                                   const SizedBox(height: 12),
                                                   DropdownButtonFormField<int>(
@@ -1134,7 +1134,7 @@ class _OptionsPageState extends State<OptionsPage> {
                                                         setStateDialog(() => selectedAlertMinutes = value);
                                                       }
                                                     },
-                                                  ),
+                                                  ),*/
                                                 ],
                                               ),
                                             ),
@@ -1322,7 +1322,7 @@ class _OptionsPageState extends State<OptionsPage> {
                                         }
                                       },
                                     ),
-                                    const SizedBox(height: 12),
+                                    /*const SizedBox(height: 12),
                                     TextField(controller: detailCtrl, decoration: const InputDecoration(labelText: 'Detalle (Opcional)', isDense: true), maxLines: 3),
                                     const SizedBox(height: 12),
                                     DropdownButtonFormField<int>(
@@ -1340,7 +1340,7 @@ class _OptionsPageState extends State<OptionsPage> {
                                           setStateDialog(() => selectedAlertMinutes = value);
                                         }
                                       },
-                                    ),
+                                    ),*/
                                   ],
                                 ),
                               ),
@@ -1866,9 +1866,9 @@ class _OptionsPageState extends State<OptionsPage> {
             _buildCard(context, 'Historial de alertas', 'Emergencias registradas', icon: Icons.history, color: Colors.green),
             _buildCard(context, 'Registro de síntomas', 'Diario de salud', icon: Icons.article, color: Colors.teal),
             const SizedBox(height: 12),
-            Text('Documentos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: sectionTitleFontSize)),
-            const SizedBox(height: 8),
-            _buildCard(context, 'Información de seguro', 'Pólizas y cobertura', icon: Icons.shield, color: Colors.pink),
+            //Text('Documentos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: sectionTitleFontSize)),
+            //const SizedBox(height: 8),
+            //_buildCard(context, 'Información de seguro', 'Pólizas y cobertura', icon: Icons.shield, color: Colors.pink),
             // Mostrar resumen de seguro si existe (moved here)
             if (_insuranceCompany != null || _policyNumber != null || _insurancePhone != null)
               Card(

@@ -29,6 +29,7 @@ android {
         targetSdk = flutter.targetSdkVersion  // Ensure targetSdk is 30+ for modern storage permissions
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        setProperty("archivesBaseName", "Life-Alert-${versionName}")
     }
 
     buildTypes {
