@@ -81,28 +81,28 @@ class _OptionsPageState extends State<OptionsPage> {
         if (mounted) {
           if (photosStatus.isGranted || manageStatus.isGranted || storageStatus.isGranted) {
             print('[storage-permission] ✓ al menos un permiso está activo en el sistema');
-            ScaffoldMessenger.of(context).showSnackBar(
+            /*ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('✓ Permiso de almacenamiento activado'),
                 duration: Duration(seconds: 2),
               ),
-            );
+            );*/
           } else if (status.isDenied) {
             print('[storage-permission] ⚠️ permiso denegado');
-            ScaffoldMessenger.of(context).showSnackBar(
+            /*ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('⚠️ Permiso de almacenamiento denegado'),
                 duration: Duration(seconds: 2),
               ),
-            );
+            );*/
           } else if (status.isPermanentlyDenied) {
             print('[storage-permission] 🔒 permiso denegado permanentemente');
-            ScaffoldMessenger.of(context).showSnackBar(
+            /*ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('🔒 Permiso permanentemente denegado. Ve a Ajustes > Aplicaciones > Life Alert > Permisos > Todos los archivos'),
                 duration: Duration(seconds: 3),
               ),
-            );
+            );*/
             // Opcional: abrir ajustes automáticamente
             // await openAppSettings();
           }
@@ -113,9 +113,9 @@ class _OptionsPageState extends State<OptionsPage> {
     } catch (e) {
       print('[storage-permission] ERROR: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        /*ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error solicitando permisos: $e')),
-        );
+        );*/
       }
     }
   }
@@ -1495,22 +1495,22 @@ class _OptionsPageState extends State<OptionsPage> {
                                           print('[options] Alerta actualizada en Firebase: $alertId');
                                           
                                           if (!mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          /*ScaffoldMessenger.of(context).showSnackBar(
                                             const SnackBar(
-                                              content: Text('✓ Alerta actualizada en Firebase'),
+                                              content: Text('Alerta actualizada en Firebase'),
                                               duration: Duration(seconds: 2),
                                             ),
-                                          );
+                                          );*/
                                         } catch (e) {
                                           print('[options] Error al actualizar en Firebase: $e');
                                           if (!mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          /*ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
                                               content: Text('Error al actualizar Firebase: $e'),
                                               duration: const Duration(seconds: 3),
                                               backgroundColor: Colors.red,
                                             ),
-                                          );
+                                          );*/
                                         }
                                       }
                                     },

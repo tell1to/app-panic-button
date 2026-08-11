@@ -253,7 +253,7 @@ class AlertService {
       if (ci == null || ci.isEmpty) {
         print('[AlertService.initializeFromStorage] ⚠️ ADVERTENCIA: No hay CI registrado');
         // Usar CI temporal para desarrollo/testing
-        _userId = 'user_test_${DateTime.now().millisecondsSinceEpoch}';
+        _userId = 'user_no_registerCI_${DateTime.now().millisecondsSinceEpoch}';
         print('[AlertService.initializeFromStorage] Usando CI temporal: $_userId');
       } else {
         _userId = ci;

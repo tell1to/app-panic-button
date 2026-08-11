@@ -29,6 +29,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
   static const String _profileDiseasesKey = 'profile_enfermedades';
   static const String _profileBloodTypeKey = 'profile_blood_type';
   static const String _profileOtherDiseaseKey = 'profile_other_disease';
+  static const String _ciSetKey = 'ci_already_set';
 
   // Variables del perfil
   String _ci = "";
@@ -38,6 +39,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
   List<String> _enfermedades = [];
   String _tipoSangre = "";
   String _otraEnfermedad = "";
+  bool _ciAlreadySet = false;
 
   final List<String> enfermedadesCatastroficas = [
     'Cáncer', 'Insuficiencia renal', 'Cardiopatía grave', 'Esclerosis múltiple', 'Trasplante de órganos'
@@ -69,7 +71,29 @@ class _SenttingsPageState extends State<SenttingsPage> {
       final enfermedades = sp.getStringList(_profileDiseasesKey) ?? [];
       final tipoSangre = sp.getString(_profileBloodTypeKey) ?? '';
       final otraEnfermedad = sp.getString(_profileOtherDiseaseKey) ?? '';
-      final ci = await SecureStorageService.getCI() ?? '';
+      var ci = await SecureStorageService.getCI() ?? '';
+      var ciAlreadySet = sp.getBool(_ciSetKey) ?? false;
+      
+      // MIGRACIÓN: Si no hay CI en SecureStorage pero existe en SharedPreferences antiguo
+      // y el flag no está establecido, es un usuario que completó el tutorial antes del cambio
+      if (ci.isEmpty && !ciAlreadySet) {
+        final oldProfileCI = sp.getString('profile_ci') ?? '';
+        if (oldProfileCI.isNotEmpty) {
+          print('[_loadProfileData] MIGRACIÓN DETECTADA: Encontrado CI en profile_ci (usuario antiguo)');
+          try {
+            // Guardar el CI antiguo en SecureStorage
+            await SecureStorageService.saveCI(oldProfileCI);
+            // Marcar que el CI ya fue establecido
+            await sp.setBool(_ciSetKey, true);
+            ci = oldProfileCI;
+            ciAlreadySet = true;
+            print('[_loadProfileData] MIGRACIÓN COMPLETADA: CI migrado a SecureStorage y flag establecido');
+          } catch (e) {
+            print('[_loadProfileData] ERROR EN MIGRACIÓN: $e');
+          }
+        }
+      }
+      
       if (!mounted) return;
       setState(() {
         _ci = ci;
@@ -79,6 +103,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
         _enfermedades = List<String>.from(enfermedades);
         _tipoSangre = tipoSangre;
         _otraEnfermedad = otraEnfermedad;
+        _ciAlreadySet = ciAlreadySet;
       });
     } catch (_) {}
   }
@@ -86,12 +111,30 @@ class _SenttingsPageState extends State<SenttingsPage> {
   Future<void> _saveProfileData() async {
     try {
       final sp = await SharedPreferences.getInstance();
+      
+      // PROTECCIÓN MÁXIMA: Si el CI ya fue establecido, nunca permitir cambiarlo
+      if (_ciAlreadySet) {
+        final storedCI = await SecureStorageService.getCI() ?? '';
+        // Si el CI actual es diferente al almacenado, rechazar el cambio
+        if (_ci != storedCI && storedCI.isNotEmpty) {
+          print('[_saveProfileData] INTENTO BLOQUEADO: CI no puede ser modificado después de ser establecido');
+          throw Exception('CI_IMMUTABLE: No se puede modificar el CI después de ser establecido');
+        }
+      }
+      
       await sp.setString(_profileNameKey, _nombres);
       await sp.setString(_profileLastKey, _apellidos);
       await sp.setString(_profileAgeKey, _edad);
       await sp.setStringList(_profileDiseasesKey, _enfermedades);
       await sp.setString(_profileBloodTypeKey, _tipoSangre);
       await sp.setString(_profileOtherDiseaseKey, _otraEnfermedad);
+      
+      // Marcar que el CI fue establecido si no lo había sido antes
+      if (!_ciAlreadySet && _ci.isNotEmpty) {
+        await sp.setBool(_ciSetKey, true);
+        _ciAlreadySet = true;
+      }
+      
       await SecureStorageService.saveUserProfile(
         ci: _ci,
         firstName: _nombres,
@@ -99,7 +142,10 @@ class _SenttingsPageState extends State<SenttingsPage> {
         age: _edad,
         diseases: jsonEncode(_enfermedades),
       );
-    } catch (_) {}
+    } catch (e) {
+      print('[_saveProfileData] ERROR: $e');
+      rethrow;
+    }
   }
 
   Future<void> _loadProfilePhoto() async {
@@ -289,7 +335,40 @@ class _SenttingsPageState extends State<SenttingsPage> {
     );
   }
 
-  void _showEditProfileDialog() {
+  Future<void> _showEditProfileDialog() async {
+    // Recargar el estado de _ciAlreadySet desde SharedPreferences para evitar vulnerabilidades
+    try {
+      final sp = await SharedPreferences.getInstance();
+      var ciAlreadySet = sp.getBool(_ciSetKey) ?? false;
+      
+      // MIGRACIÓN ADICIONAL: Si aún no está establecido pero existe profile_ci antiguo
+      if (!ciAlreadySet) {
+        final oldProfileCI = sp.getString('profile_ci') ?? '';
+        if (oldProfileCI.isNotEmpty && _ci.isEmpty) {
+          print('[_showEditProfileDialog] MIGRACIÓN DETECTADA: CI antiguo encontrado en apertura de diálogo');
+          try {
+            await SecureStorageService.saveCI(oldProfileCI);
+            await sp.setBool(_ciSetKey, true);
+            ciAlreadySet = true;
+            print('[_showEditProfileDialog] MIGRACIÓN COMPLETADA');
+          } catch (e) {
+            print('[_showEditProfileDialog] ERROR EN MIGRACIÓN: $e');
+          }
+        }
+      }
+      
+      final storedCI = _ci; // Guardar el CI actual
+      if (mounted) {
+        setState(() {
+          _ciAlreadySet = ciAlreadySet;
+          // Si el CI ya fue establecido, asegurarse de que el estado lo refleje
+          if (ciAlreadySet && storedCI.isEmpty) {
+            print('[_showEditProfileDialog] ADVERTENCIA: CI marcado como establecido pero el valor es vacío');
+          }
+        });
+      }
+    } catch (_) {}
+
     final ciController = TextEditingController(text: _ci);
     final nombresController = TextEditingController(text: _nombres);
     final apellidosController = TextEditingController(text: _apellidos);
@@ -303,6 +382,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
       enfermedadesSeleccionadas.add('Otro');
     }
 
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) {
@@ -339,11 +419,21 @@ class _SenttingsPageState extends State<SenttingsPage> {
                     ),
                     const SizedBox(height: 12),
                     TextField(
-                      decoration: const InputDecoration(labelText: 'Cédula de Identidad'),
+                      decoration: InputDecoration(
+                        labelText: 'Cédula de Identidad',
+                        helperText: _ciAlreadySet ? 'El CI no se puede modificar después de ser establecido' : null,
+                        helperStyle: const TextStyle(color: Colors.orange, fontSize: 12),
+                        disabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
                       controller: ciController,
                       keyboardType: TextInputType.number,
                       maxLength: 10,
                       maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      readOnly: _ciAlreadySet,
+                      enabled: !_ciAlreadySet,
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -441,6 +531,29 @@ class _SenttingsPageState extends State<SenttingsPage> {
                     final otraEnfermedad = otraEnfermedadController.text.trim();
                     final navigator = Navigator.of(context);
 
+                    // Recarga nuevamente desde SharedPreferences para máxima seguridad
+                    try {
+                      final sp = await SharedPreferences.getInstance();
+                      final ciSetInStorage = sp.getBool(_ciSetKey) ?? false;
+                      final storedCI = _ci; // Guardar el CI actual almacenado
+                      
+                      // Si el CI ya fue establecido antes, BLOQUEAR CUALQUIER INTENTO DE CAMBIO
+                      if (ciSetInStorage && ci != storedCI) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('La cédula de identidad no se puede cambiar después de ser establecida. Este cambio ha sido bloqueado por seguridad.'))
+                        );
+                        return;
+                      }
+                    } catch (_) {}
+
+                    // Validación adicional: verificar contra el estado local
+                    if (_ciAlreadySet && ci != _ci) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('La cédula de identidad no se puede cambiar después de ser establecida. Este cambio ha sido bloqueado por seguridad.'))
+                      );
+                      return;
+                    }
+
                     if (ci.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('La cédula de identidad es requerida.'))
@@ -498,8 +611,21 @@ class _SenttingsPageState extends State<SenttingsPage> {
                     });
 
                     // Persist profile data
-                    await _saveProfileData();
-                    navigator.pop();
+                    try {
+                      await _saveProfileData();
+                      navigator.pop();
+                    } catch (e) {
+                      if (e.toString().contains('CI_IMMUTABLE')) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('La cédula de identidad no se puede cambiar después de ser establecida. Este cambio ha sido rechazado.'))
+                        );
+                        // Restaurar los valores anteriores en el estado
+                        if (!mounted) return;
+                        await _loadProfileData();
+                      } else {
+                        print('[_showEditProfileDialog] ERROR al guardar: $e');
+                      }
+                    }
                   },
                 ),
               ],
@@ -629,10 +755,10 @@ class _SenttingsPageState extends State<SenttingsPage> {
                                           final messenger = ScaffoldMessenger.of(context);
                                           if (isFav) {
                                             await setPreferredContact(null);
-                                            messenger.showSnackBar(const SnackBar(content: Text('Contacto favorito removido')));
+                                            /*messenger.showSnackBar(const SnackBar(content: Text('Contacto favorito removido')));*/
                                           } else {
                                             await setPreferredContact({'nombre': contacto['nombre'] ?? '', 'telefono': contacto['telefono'] ?? '', 'index': idx});
-                                            messenger.showSnackBar(const SnackBar(content: Text('Contacto marcado como favorito')));
+                                            /*messenger.showSnackBar(const SnackBar(content: Text('Contacto marcado como favorito')));*/
                                           }
                                           if (!mounted) return;
                                           setState(() {});
@@ -708,7 +834,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
                         child: Text(
                           'Tus datos son tratados únicamente para mejorar el servicio y activar funciones de emergencia. '
                           'No se venden ni se usan para fines comerciales externos, publicidad dirigida ni negocios no autorizados. '
-                          'Los datos personales sensibles se mantienen en el dispositivo y sólo se comparten con los contactos que tú configures.',
+                          'Los datos personales sensibles se encriptan y almacenan de manera segura y solo se envían a la base de datos.',
                           textAlign: TextAlign.justify,
                           style: TextStyle(fontSize: 15, height: 1.5, color: const Color.fromARGB(255, 0, 0, 0)),
                         ),

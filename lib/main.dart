@@ -428,9 +428,9 @@ class _InicioPageState extends State<InicioPage> {
     }
 
     // Si pasó el rate limit, proceder con la activación
-    ScaffoldMessenger.of(context).showSnackBar(
+    /*ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Alerta activada: notificando contactos y servicios')),
-    );
+    );*/
     
     // Registrar evento en Firebase Analytics
     await FirebaseService.instance.logEvent('emergency_activated', {
@@ -445,7 +445,7 @@ class _InicioPageState extends State<InicioPage> {
         numberToCall = _preferredContact!['telefono']!;
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));
+        /*ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay contacto favorito en Ajustes; llamando a 911')));*/
         numberToCall = '911';
       }
     }
@@ -781,7 +781,7 @@ class _InicioPageState extends State<InicioPage> {
     } catch (_) {}
     final label = index == 0 ? '911' : (_preferredContact?['nombre'] ?? 'Contacto');
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Botón seleccionado: $label')));
+    /*ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Botón seleccionado: $label')));*/
   }
 
   // Extracted helpers to reduce build size

@@ -270,7 +270,7 @@ class _AgregarContactoDialogEcuadorState
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('✅ Contacto guardado: $nombre ($telefonoNormalizado)'),
+                content: Text('Contacto guardado: $nombre ($telefonoNormalizado)'),
               ),
             );
             Navigator.pop(context);

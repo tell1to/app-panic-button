@@ -67,9 +67,9 @@ class _SyncTestingWidgetState extends State<SyncTestingWidget> {
   }
 
   Future<void> _forceSync() async {
-    ScaffoldMessenger.of(context).showSnackBar(
+    /*ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Sincronización iniciada...')),
-    );
+    );*/
     
     await _syncService.forceSyncNow();
     await Future.delayed(const Duration(seconds: 2));
@@ -78,9 +78,9 @@ class _SyncTestingWidgetState extends State<SyncTestingWidget> {
       _loadStats();
       _loadAlertFiles();
       
-      ScaffoldMessenger.of(context).showSnackBar(
+      /*ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sincronización completada')),
-      );
+      );*/
     }
   }
 
@@ -94,7 +94,7 @@ class _SyncTestingWidgetState extends State<SyncTestingWidget> {
       }
     });
     
-    ScaffoldMessenger.of(context).showSnackBar(
+    /*ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           _isSimulatingOffline 
@@ -102,7 +102,7 @@ class _SyncTestingWidgetState extends State<SyncTestingWidget> {
               : '📡 Modo ONLINE activado'
         ),
       ),
-    );
+    );*/
   }
 
   Future<void> _deleteAllAlerts() async {
@@ -148,15 +148,15 @@ class _SyncTestingWidgetState extends State<SyncTestingWidget> {
       _loadAlertFiles();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        /*ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✓ Alertas eliminadas')),
-        );
+        );*/
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        /*ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('✗ Error: $e')),
-        );
+        );*/
       }
     }
   }

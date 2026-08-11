@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../utils/preferences.dart';
+import '../services/secure_storage_service.dart';
 
 const String _tutorialCompletedKey = 'tutorial_completed';
 
@@ -140,6 +141,9 @@ class _TutorialScreenState extends State<TutorialScreen> {
       }
       if (_ci.isNotEmpty) {
         await sp.setString('profile_ci', _ci);
+        await SecureStorageService.saveCI(_ci);
+        // IMPORTANTE: Marcar que el CI ya fue establecido (no se puede cambiar después)
+        await sp.setBool('ci_already_set', true);
       }
       if (_edad.isNotEmpty) {
         await sp.setString('profile_edad', _edad);
