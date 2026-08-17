@@ -228,6 +228,8 @@ class _InicioPageState extends State<InicioPage> {
   
   // Estado del rate limit (para mostrar UI)
   RateLimitInfo? _rateLimitInfo;
+  // Timer para el contador regresivo en vivo del rate limit
+  Timer? _rateLimitTimer;
 
   Future<void> _callNumber(BuildContext context, String number) async {
     final String normalized = _normalizePhone(number);
@@ -285,6 +287,48 @@ class _InicioPageState extends State<InicioPage> {
         _rateLimitInfo = info;
       });
     }
+
+    // Sincronizar el contador regresivo según el estado actual
+    _syncRateLimitCountdown(info);
+  }
+
+  /// Inicia o detiene el contador regresivo en vivo del rate limit.
+  /// Mientras el límite esté activo, refresca la información cada segundo
+  /// para mostrar los minutos/segundos restantes en tiempo real.
+  void _syncRateLimitCountdown(RateLimitInfo info) {
+    final bool shouldCountdown =
+        info.isLimited && info.timeUntilNextAttempt != null;
+
+    if (!shouldCountdown) {
+      _rateLimitTimer?.cancel();
+      _rateLimitTimer = null;
+      return;
+    }
+
+    // El timer ya está corriendo
+    if (_rateLimitTimer != null && _rateLimitTimer!.isActive) return;
+
+    _rateLimitTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) {
+        _rateLimitTimer?.cancel();
+        _rateLimitTimer = null;
+        return;
+      }
+      _updateRateLimitInfo();
+    });
+  }
+
+  /// Formatear el tiempo restante como "Xm Ys" (o solo "Ys" si es < 1 minuto)
+  String _formatCountdown(Duration duration) {
+    // Redondear hacia arriba para no mostrar "0s" mientras aún está bloqueado
+    final int totalSeconds = (duration.inMilliseconds / 1000).ceil();
+    if (totalSeconds <= 0) return '0s';
+    final int minutes = totalSeconds ~/ 60;
+    final int seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    }
+    return '${seconds}s';
   }
 
   /// Cargar todos los datos del paciente desde SharedPreferences
@@ -409,13 +453,13 @@ class _InicioPageState extends State<InicioPage> {
 
       if (!mounted) return;
       
-      ScaffoldMessenger.of(context).showSnackBar(
+      /*ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Límite de intentos alcanzado. ${rateLimitInfo.readableInfo}'),
           duration: const Duration(seconds: 4),
           backgroundColor: Colors.red.shade700,
         ),
-      );
+      );*/
       
       print('[main._activateEmergency] Rate limit alcanzado. ${rateLimitInfo.readableInfo}');
       Future.delayed(const Duration(milliseconds: 800), () {
@@ -707,6 +751,7 @@ class _InicioPageState extends State<InicioPage> {
       allContacts.removeListener(_contactsListener);
     } catch (_) {}
     _holdTimer?.cancel();
+    _rateLimitTimer?.cancel();
     super.dispose();
   }
 
@@ -1024,7 +1069,10 @@ class _InicioPageState extends State<InicioPage> {
 
     if (info.isLimited) {
       textColor = Colors.red;
-      statusText = '⚠️ Límite alcanzado - ${info.readableInfo}';
+      final countdown = info.timeUntilNextAttempt != null
+          ? 'Intenta en ${_formatCountdown(info.timeUntilNextAttempt!)}'
+          : info.readableInfo;
+      statusText = '⚠️ Límite alcanzado - $countdown';
     } else if (info.attemptsRemaining == 1) {
       textColor = Colors.orange;
       statusText = '⚠️ Intentos: ${info.attemptsUsed}/${info.maxAttempts} - Último intento disponible';

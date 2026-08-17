@@ -1,14 +1,21 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Servicio de Rate Limiting para proteger acciones contra activaciones excesivas
-/// Permite un número máximo de activaciones dentro de un período de tiempo especificado
+/// Permite un número máximo de activaciones dentro de un período de tiempo especificado.
+///
+/// Usa una **ventana fija**: se almacena el inicio de la ventana y la cantidad de
+/// intentos realizados dentro de ella. Cuando la ventana expira, el contador se
+/// reinicia a cero, de modo que el usuario siempre parte desde 1/max en la ventana
+/// siguiente (en lugar de heredar intentos de la ventana anterior).
 class RateLimiter {
   // MODO DESARROLLO: Cambia a 'false' para deshabilitar el rate limiting
   // Útil para testing sin límite de intentos
   static const bool enableRateLimit = true; // ← CAMBIA AQUÍ: true = habilitado, false = deshabilitado
   
   // Claves para almacenamiento persistente
-  static const String _timestampsKey = 'rate_limit_timestamps';
+  static const String _stateKey = 'rate_limit_state';
 
   // Configuración por defecto: máximo 4 activaciones en 2 minutos (desarrollo)
   static const int defaultMaxActivations = 4;
@@ -36,38 +43,13 @@ class RateLimiter {
     final now = DateTime.now();
     final windowDuration = Duration(minutes: windowMinutes);
 
-    // Obtener timestamps previos del almacenamiento
-    final storedTimestamps = prefs.getStringList('${_timestampsKey}_$action') ?? [];
+    final (windowStart, attempts) = _loadState(prefs, action, now, windowDuration);
 
-    // Convertir strings a DateTime y filtrar los que están dentro de la ventana
-    final validTimestamps = storedTimestamps
-        .map((ts) {
-          try {
-            return DateTime.parse(ts);
-          } catch (_) {
-            return null;
-          }
-        })
-        .whereType<DateTime>()
-        .where((ts) => now.difference(ts) < windowDuration)
-        .toList();
+    // Si aún hay intentos disponibles dentro de la ventana, registrar este nuevo intento
+    if (attempts < maxAttempts) {
+      await _saveState(prefs, action, windowStart, attempts + 1);
 
-    // Si aún hay intentos disponibles, registrar este nuevo intento
-    if (validTimestamps.length < maxAttempts) {
-      // Agregar el timestamp actual
-      validTimestamps.add(now);
-
-      // Guardar los timestamps actualizados
-      final updatedTimestamps = validTimestamps
-          .map((ts) => ts.toIso8601String())
-          .toList();
-
-      await prefs.setStringList(
-        '${_timestampsKey}_$action',
-        updatedTimestamps,
-      );
-
-      print('[RateLimiter.canExecute] ✓ Intento ${validTimestamps.length}/$maxAttempts permitido para "$action"');
+      print('[RateLimiter.canExecute] ✓ Intento ${attempts + 1}/$maxAttempts permitido para "$action"');
       return true;
     }
 
@@ -98,36 +80,20 @@ class RateLimiter {
     final now = DateTime.now();
     final windowDuration = Duration(minutes: windowMinutes);
 
-    // Obtener timestamps previos
-    final storedTimestamps = prefs.getStringList('${_timestampsKey}_$action') ?? [];
+    final (windowStart, attempts) = _loadState(prefs, action, now, windowDuration);
 
-    // Convertir y filtrar
-    final validTimestamps = storedTimestamps
-        .map((ts) {
-          try {
-            return DateTime.parse(ts);
-          } catch (_) {
-            return null;
-          }
-        })
-        .whereType<DateTime>()
-        .where((ts) => now.difference(ts) < windowDuration)
-        .toList();
-
-    // Calcular tiempo hasta el siguiente intento disponible
+    // Calcular tiempo hasta el próximo reinicio de la ventana
     Duration? timeUntilNext;
-    if (validTimestamps.length >= maxAttempts) {
-      // Si se alcanzó el límite, el siguiente intento será cuando expire el más antiguo
-      final oldestTimestamp = validTimestamps.first;
-      final expiryTime = oldestTimestamp.add(windowDuration);
-      timeUntilNext = expiryTime.difference(now);
+    if (attempts >= maxAttempts) {
+      // Si se alcanzó el límite, el siguiente intento será cuando expire la ventana
+      timeUntilNext = windowStart.add(windowDuration).difference(now);
     }
 
     return RateLimitInfo(
-      attemptsUsed: validTimestamps.length,
+      attemptsUsed: attempts,
       maxAttempts: maxAttempts,
       windowMinutes: windowMinutes,
-      isLimited: validTimestamps.length >= maxAttempts,
+      isLimited: attempts >= maxAttempts,
       timeUntilNextAttempt: timeUntilNext,
       nextAvailableTime: timeUntilNext != null 
           ? now.add(timeUntilNext)
@@ -135,11 +101,60 @@ class RateLimiter {
     );
   }
 
+  /// Cargar el estado persistido de la acción.
+  /// Si la ventana ya expiró (o no hay estado válido), devuelve una ventana nueva
+  /// que inicia en [now] con 0 intentos.
+  static (DateTime, int) _loadState(
+    SharedPreferences prefs,
+    String action,
+    DateTime now,
+    Duration windowDuration,
+  ) {
+    final raw = prefs.getString('${_stateKey}_$action');
+    DateTime windowStart = now;
+    int attempts = 0;
+
+    if (raw != null) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          final start = DateTime.tryParse(decoded['start']?.toString() ?? '');
+          if (start != null) {
+            windowStart = start;
+            attempts = (decoded['attempts'] as num?)?.toInt() ?? 0;
+          }
+        }
+      } catch (_) {
+        // Datos corruptos o en formato antiguo: se tratan como ventana nueva
+      }
+    }
+
+    // Si la ventana expiró, reiniciar el contador desde cero
+    if (now.difference(windowStart) >= windowDuration) {
+      return (now, 0);
+    }
+
+    return (windowStart, attempts);
+  }
+
+  /// Persistir el estado de la ventana para la acción
+  static Future<void> _saveState(
+    SharedPreferences prefs,
+    String action,
+    DateTime windowStart,
+    int attempts,
+  ) async {
+    await prefs.setString('${_stateKey}_$action', jsonEncode({
+      'start': windowStart.toIso8601String(),
+      'attempts': attempts,
+    }));
+  }
+
   /// Resetear completamente el contador de rate limit para una acción
   /// Útil para testing o para dar una "segunda oportunidad"
   static Future<void> reset({required String action}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('${_timestampsKey}_$action');
+    await prefs.remove('${_stateKey}_$action');
   }
 
   /// Resetear todos los rate limiters
@@ -147,7 +162,7 @@ class RateLimiter {
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys();
     final rateLimitKeys = keys
-        .where((key) => key.startsWith(_timestampsKey))
+        .where((key) => key.startsWith(_stateKey))
         .toList();
 
     for (final key in rateLimitKeys) {

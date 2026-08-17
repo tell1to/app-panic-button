@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../utils/preferences.dart';
+import '../utils/validators/validators.dart';
 import '../services/secure_storage_service.dart';
 
 const String _tutorialCompletedKey = 'tutorial_completed';
@@ -159,23 +160,40 @@ class _TutorialScreenState extends State<TutorialScreen> {
           'telefono': _contactoTelefono,
         };
 
-        // Agregar a lista de contactos
+        // Normalizar el teléfono para compararlo con contactos existentes
+        final telefonoNormalizado = Validators.normalizePhoneNumber(_contactoTelefono);
+
+        // Agregar a lista de contactos (solo si el número no está duplicado)
         final raw = sp.getStringList('user_contacts') ?? [];
-        raw.add(jsonEncode(contact));
-        await sp.setStringList('user_contacts', raw);
+        final esDuplicado = raw.any((jsonContact) {
+          try {
+            final Map<String, dynamic> m = jsonDecode(jsonContact) as Map<String, dynamic>;
+            final otroTelefono = Validators.normalizePhoneNumber(m['telefono']?.toString() ?? '');
+            return otroTelefono == telefonoNormalizado;
+          } catch (_) {
+            return false;
+          }
+        });
 
-        // Establecer como contacto preferido
-        await sp.setString('preferred_name', _contactoNombre);
-        await sp.setString('preferred_phone', _contactoTelefono);
-        await sp.setInt('preferred_index', 0);
+        if (esDuplicado) {
+          print('[Tutorial] Contacto omitido: el número $telefonoNormalizado ya existe en otro contacto');
+        } else {
+          raw.add(jsonEncode(contact));
+          await sp.setStringList('user_contacts', raw);
 
-        // Actualizar ValueNotifier de preferencias
-        allContacts.value = [contact];
-        preferredContact.value = {
-          'nombre': _contactoNombre,
-          'telefono': _contactoTelefono,
-          'index': 0,
-        };
+          // Establecer como contacto preferido
+          await sp.setString('preferred_name', _contactoNombre);
+          await sp.setString('preferred_phone', _contactoTelefono);
+          await sp.setInt('preferred_index', 0);
+
+          // Actualizar ValueNotifier de preferencias
+          allContacts.value = [contact];
+          preferredContact.value = {
+            'nombre': _contactoNombre,
+            'telefono': _contactoTelefono,
+            'index': 0,
+          };
+        }
       }
 
       // Marcar tutorial como completado

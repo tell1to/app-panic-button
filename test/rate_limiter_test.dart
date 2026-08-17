@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/services/rate_limiter.dart';
@@ -416,6 +418,69 @@ void main() {
         expect(info.readableInfo, isNotEmpty);
         // Típicamente contendrá "Intenta en..."
         expect(info.readableInfo.toLowerCase(), contains('intenta'));
+      });
+    });
+
+    group('Window Expiry', () {
+      // Reproduce el bug reportado: al llegar al límite (3/3) y esperar a que
+      // expire la ventana, el contador debe reiniciarse a 0 (siguiente intento 1/3)
+      // en lugar de heredar intentos de la ventana anterior (2/3, 3/3, etc.)
+      test('counter resets to zero after window expires', () async {
+        // Simular una ventana iniciada hace 61 minutos con 3 intentos usados
+        final oldStart = DateTime.now().subtract(const Duration(minutes: 61));
+        SharedPreferences.setMockInitialValues({
+          'rate_limit_state_test_action': jsonEncode({
+            'start': oldStart.toIso8601String(),
+            'attempts': 3,
+          }),
+        });
+
+        final info = await RateLimiter.getInfo(
+          action: 'test_action',
+          maxAttempts: 3,
+          windowMinutes: 60,
+        );
+
+        expect(info.attemptsUsed, 0, reason: 'La ventana expiró, el contador debe reiniciarse');
+        expect(info.isLimited, false);
+        expect(info.attemptsRemaining, 3);
+      });
+
+      test('after expiry, next press starts at 1/max instead of partial count', () async {
+        // Mismo escenario: 3/3 usados pero la ventana ya expiró
+        final oldStart = DateTime.now().subtract(const Duration(minutes: 61));
+        SharedPreferences.setMockInitialValues({
+          'rate_limit_state_test_action': jsonEncode({
+            'start': oldStart.toIso8601String(),
+            'attempts': 3,
+          }),
+        });
+
+        final canExecute = await RateLimiter.canExecute(
+          action: 'test_action',
+          maxAttempts: 3,
+          windowMinutes: 60,
+        );
+        expect(canExecute, true, reason: 'Debe permitir presionar de nuevo tras expirar la ventana');
+
+        final info = await RateLimiter.getInfo(
+          action: 'test_action',
+          maxAttempts: 3,
+          windowMinutes: 60,
+        );
+        expect(info.attemptsUsed, 1, reason: 'Debe reiniciar desde 1/3, no desde 2/3');
+        expect(info.attemptsRemaining, 2);
+      });
+
+      test('attempts do not expire one by one within the same window', () async {
+        // Dentro de la ventana, los intentos deben acumularse sin descontarse
+        // aunque pase algo de tiempo (aún dentro de la ventana).
+        final info = await RateLimiter.getInfo(
+          action: 'test_action',
+          maxAttempts: 3,
+          windowMinutes: 60,
+        );
+        expect(info.attemptsUsed, 0);
       });
     });
 

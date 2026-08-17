@@ -219,6 +219,18 @@ class _SenttingsPageState extends State<SenttingsPage> {
   }
 
   // --- Contactos ---
+  /// Verifica si el teléfono (ya normalizado) pertenece a otro contacto.
+  /// Al editar, [index] indica el contacto que se está modificando para
+  /// no compararse consigo mismo.
+  bool _esTelefonoDuplicado(String telefonoNormalizado, {int? index}) {
+    return _contactos.asMap().entries.any((entry) {
+      if (entry.key == index) return false;
+      final otroTelefono =
+          Validators.normalizePhoneNumber(entry.value['telefono'] ?? '');
+      return otroTelefono == telefonoNormalizado;
+    });
+  }
+
   void _showContactoDialog({int? index}) {
     final String initialNombre = index != null ? _contactos[index]['nombre'] ?? '' : '';
     final String initialTelefono = index != null ? _contactos[index]['telefono'] ?? '' : '';
@@ -278,6 +290,25 @@ class _SenttingsPageState extends State<SenttingsPage> {
 
                 // Normalizar número de teléfono al formato local de Ecuador (0963522505)
                 final telefonoNormalizado = Validators.normalizePhoneNumber(telefono);
+
+                // Validación anti-duplicados: no permitir que dos contactos compartan el mismo número
+                if (_esTelefonoDuplicado(telefonoNormalizado, index: index)) {
+                  // Popup de número duplicado (el diálogo de contacto queda abierto para corregir)
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('Número duplicado'),
+                      content: const Text('Número duplicado, no se puede colocar. Este teléfono ya está registrado en otro contacto.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Aceptar'),
+                        ),
+                      ],
+                    ),
+                  );
+                  return;
+                }
 
                 if (index == null) {
                   _contactos.add({'nombre': nombre, 'telefono': telefonoNormalizado});
@@ -852,7 +883,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
               child: ListTile(
                 leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.phone_android, color: Colors.black54)),
                 title: const Text('Versión de la app', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('1.4.66', style: TextStyle(fontSize: 13)),
+                subtitle: const Text('1.4.67', style: TextStyle(fontSize: 13)),
               ),
             ),
 
