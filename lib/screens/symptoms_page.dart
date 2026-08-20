@@ -85,13 +85,16 @@ class _SymptomsPageState extends State<SymptomsPage> {
     final double textFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
     final double labelFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
     
-    // Colores pastel: Rosado y Celeste
-    const Color pastelRosado = Color(0xFFFFB3D9);
-    const Color pastelCeleste = Color(0xFFADD8E6);
-    const Color textoOscuro = Color(0xFF5A5A7F);
+    // Paleta de colores pastel moderna
+    const Color pastelRosado = Color(0xFFFFD9E9);      // Rosado pastel suave
+    const Color pastelCeleste = Color(0xFFC8E6E0);     // Celeste/Menta claro
+    const Color pastelAzul = Color(0xFFD4E1F5);        // Azul pastel
+    const Color pastelVerde = Color(0xFFE8F5E9);       // Verde pastel claro
+    const Color fondoPrincipal = Color(0xFFFFFBF8);    // Fondo blanco cálido
+    const Color textoOscuro = Color(0xFF6B5B95);       // Púrpura oscuro suave
     
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F6),
+      backgroundColor: fondoPrincipal,
       appBar: AppBar(
         title: Text('Registro de Síntomas', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: textoOscuro)),
         backgroundColor: pastelRosado,
@@ -308,9 +311,11 @@ class _SymptomsPageState extends State<SymptomsPage> {
   }
   // Show dialog to add a new entry
   Future<void> _showAddDialog() async {
-    const Color pastelRosado = Color(0xFFFFB3D9);
-    const Color pastelCeleste = Color(0xFFADD8E6);
-    const Color textoOscuro = Color(0xFF5A5A7F);
+    const Color pastelRosado = Color(0xFFFFD9E9);
+    const Color pastelCeleste = Color(0xFFC8E6E0);
+    const Color pastelAzul = Color(0xFFD4E1F5);
+    const Color textoOscuro = Color(0xFF6B5B95);
+    const Color fondoDialog = Color(0xFFFFFBF8);
     
     await showDialog<void>(
       context: context,
@@ -325,7 +330,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
           final double dialogTextSize = (dialogScreenWidth * 0.035).clamp(12.0, 14.0);
           
           return AlertDialog(
-            backgroundColor: const Color(0xFFFAF8F6),
+            backgroundColor: fondoDialog,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text('Nueva entrada', style: TextStyle(fontSize: dialogTitleSize, fontWeight: FontWeight.bold, color: textoOscuro)),
             content: SingleChildScrollView(
@@ -434,9 +439,11 @@ class _SymptomsPageState extends State<SymptomsPage> {
 
   // Show dialog to edit an existing entry at index i
   Future<void> _showEditDialog(int i) async {
-    const Color pastelRosado = Color(0xFFFFB3D9);
-    const Color pastelCeleste = Color(0xFFADD8E6);
-    const Color textoOscuro = Color(0xFF5A5A7F);
+    const Color pastelRosado = Color(0xFFFFD9E9);
+    const Color pastelCeleste = Color(0xFFC8E6E0);
+    const Color pastelAzul = Color(0xFFD4E1F5);
+    const Color textoOscuro = Color(0xFF6B5B95);
+    const Color fondoDialog = Color(0xFFFFFBF8);
     
     final Map<String, dynamic> entry = Map<String, dynamic>.from(_entries[i]);
 
@@ -453,7 +460,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
           final double dialogTextSize = (dialogScreenWidth * 0.035).clamp(12.0, 14.0);
           
           return AlertDialog(
-            backgroundColor: const Color(0xFFFAF8F6),
+            backgroundColor: fondoDialog,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text('Editar entrada', style: TextStyle(fontSize: dialogTitleSize, fontWeight: FontWeight.bold, color: textoOscuro)),
             content: SingleChildScrollView(

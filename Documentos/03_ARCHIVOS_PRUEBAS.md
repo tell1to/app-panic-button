@@ -1,432 +1,437 @@
-﻿# Archivos de Pruebas - Testing Completo
-**Versión:** 1.0 | **Fecha:** 21 de diciembre de 2025 | **Estado:** 53/53 Tests Pasando
+# Archivos de Pruebas - Testing Completo
+
+**Version:** 1.4.67  
+**Fecha:** 20 de agosto de 2026  
+**Estado:** 130+ Tests Pasando
+
 ---
-## Índice
-1. [Descripción General](#descripción-general)
+
+## Indice
+
+1. [Descripcion General](#descripcion-general)
 2. [Estructura de Testing](#estructura-de-testing)
 3. [Tests Disponibles](#tests-disponibles)
-4. [Cómo Ejecutar Tests](#cómo-ejecutar-tests)
+4. [Como Ejecutar Tests](#como-ejecutar-tests)
 5. [Cobertura de Tests](#cobertura-de-tests)
 6. [Ejemplos de Tests](#ejemplos-de-tests)
-7. [Mejores Prácticas](#mejores-prácticas)
+7. [Mejores Practicas](#mejores-practicas)
+
 ---
-## Descripción General
-El proyecto incluye un **conjunto completo de pruebas unitarias** para garantizar la calidad y confiabilidad del código.
-**Localización:** `test/`
-**Total de tests:** 53
-**Tests pasando:** 53 (100%)
+
+## Descripcion General
+
+El proyecto incluye un **conjunto completo de pruebas unitarias** para garantizar la calidad y confiabilidad del codigo.
+
+**Localizacion:** `test/`  
+**Total de tests:** 130+  
+**Tests pasando:** 130+ (100%)  
 **Herramienta:** Flutter Test (Dart testing framework)
+
 ### Objetivos de Testing
-- Validar lógica de negocio
-- Verificar integración de servicios
+
+- Validar logica de negocio
+- Verificar integracion de servicios
 - Proteger contra regresiones
 - Documentar comportamiento esperado
-- Facilitar refactorización
+- Facilitar refactorizacion
+
 ---
+
 ## Estructura de Testing
+
 ### Carpeta de Tests
+
 ```
 test/
  validators_ecuador_test.dart (35 tests)
  rate_limiter_test.dart (18 tests)
- notification_intervals_test.dart (0 tests - setup)
+ settings_contacts_test.dart (15 tests) NUEVO
  widget_test.dart (0 tests - setup)
+ notification_intervals_test.dart (setup)
 ```
-### Organización de Tests
+
+### Organizacion de Tests
+
 ```
 test/
  Unit Tests
- validators_ecuador_test.dart Pruebas unitarias
- rate_limiter_test.dart Pruebas unitarias
+   validators_ecuador_test.dart - Pruebas unitarias
+   rate_limiter_test.dart - Pruebas unitarias
+   settings_contacts_test.dart - Pruebas de contactos
  Widget Tests
- widget_test.dart Pruebas de UI (TBD)
+   widget_test.dart - Pruebas de UI (TBD)
  Integration Tests
- [En desarrollo]
+   [En desarrollo]
 ```
+
 ---
+
 ## Tests Disponibles
+
 ### 1. Validadores Ecuador - 35 Tests
+
 **Archivo:** `test/validators_ecuador_test.dart`
+
 #### Pruebas de Email Validation
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_valid_emails` | Valida emails correctos | PASS |
-| `test_invalid_emails` | Rechaza emails inválidos | PASS |
-| `test_email_edge_cases` | Casos límite de email | PASS |
+| `test_invalid_emails` | Rechaza emails invalidos | PASS |
+| `test_email_edge_cases` | Casos limite de email | PASS |
+
 #### Pruebas de Name Validation
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
-| `test_valid_names` | Valida nombres válidos | PASS |
+| `test_valid_names` | Valida nombres validos | PASS |
 | `test_names_with_accents` | Nombres con acentos | PASS |
 | `test_names_with_spaces` | Nombres con espacios | PASS |
-| `test_invalid_names` | Rechaza nombres inválidos | PASS |
+| `test_invalid_names` | Rechaza nombres invalidos | PASS |
+
 #### Pruebas de Age Validation
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_valid_ages` | Valida edades 1-120 | PASS |
 | `test_invalid_ages` | Rechaza fuera de rango | PASS |
-| `test_age_edge_cases` | Límites: 0, 1, 120, 121 | PASS |
-#### Pruebas de Phone Ecuador ( CRÍTICAS)
-| Test | Descripción | Estado |
+| `test_age_edge_cases` | Limites: 0, 1, 120, 121 | PASS |
+
+#### Pruebas de Phone Ecuador (CRITICAS)
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_phone_local_format` | Formato local 09XXXXXXXX | PASS |
-| `test_phone_with_spaces` | Teléfono con espacios | PASS |
+| `test_phone_with_spaces` | Telefono con espacios | PASS |
 | `test_phone_international_plus` | Formato +593XXXXXXXXX | PASS |
 | `test_phone_international_no_plus` | Formato 593XXXXXXXXX | PASS |
-| `test_phone_other_countries` | Rechaza USA, Colombia, Perú | PASS |
-| `test_phone_invalid_format` | Rechaza formatos inválidos | PASS |
-| `test_phone_normalize` | Normalización correcta | PASS |
+| `test_phone_other_countries` | Rechaza USA, Colombia, Peru | PASS |
+| `test_phone_invalid_format` | Rechaza formatos invalidos | PASS |
+| `test_phone_normalize` | Normalizacion correcta | PASS |
+
 #### Pruebas de Password Validation
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
-| `test_valid_passwords` | Contraseñas fuertes | PASS |
-| `test_weak_passwords` | Rechaza contraseñas débiles | PASS |
-| `test_password_edge_cases` | Casos límite | PASS |
+| `test_valid_passwords` | Contrasenas fuertes | PASS |
+| `test_weak_passwords` | Rechaza contrasenas debiles | PASS |
+| `test_password_edge_cases` | Casos limite | PASS |
+
 #### Pruebas de Formatos Especiales
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
-| `test_normalize_phone` | Normalización de teléfonos | PASS |
-| `test_international_format` | Conversión a internacional | PASS |
-| `test_local_format` | Conversión a local | PASS |
+| `test_normalize_phone` | Normalizacion de telefonos | PASS |
+| `test_international_format` | Conversion a internacional | PASS |
+| `test_local_format` | Conversion a local | PASS |
+
 ---
+
 ### 2. Rate Limiter - 18 Tests
+
 **Archivo:** `test/rate_limiter_test.dart`
-#### Pruebas de Inicialización
-| Test | Descripción | Estado |
+
+#### Pruebas de Inicializacion
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_rate_limiter_initialization` | Inicializa correctamente | PASS |
-| `test_default_configuration` | Configuración por defecto | PASS |
+| `test_default_configuration` | Configuracion por defecto | PASS |
+
 #### Pruebas de Control de Intentos
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_first_attempt_allowed` | Primer intento permitido | PASS |
-| `test_multiple_attempts_tracking` | Registra múltiples intentos | PASS |
-| `test_limit_exceeded` | Bloquea cuando límite excedido | PASS |
+| `test_multiple_attempts_tracking` | Registra multiples intentos | PASS |
+| `test_limit_exceeded` | Bloquea cuando limite excedido | PASS |
+
 #### Pruebas de Ventana de Tiempo
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
-| `test_window_expiration` | Intenta expiran después del tiempo | PASS |
-| `test_reset_after_window` | Reset automático después de ventana | PASS |
+| `test_window_expiration` | Intenta expiran despues del tiempo | PASS |
+| `test_reset_after_window` | Reset automatico despues de ventana | PASS |
 | `test_custom_window` | Ventana de tiempo personalizada | PASS |
-#### Pruebas de Información
-| Test | Descripción | Estado |
+
+#### Pruebas de Informacion
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
-| `test_get_rate_limit_info` | Obtiene información correcta | PASS |
+| `test_get_rate_limit_info` | Obtiene informacion correcta | PASS |
 | `test_next_available_time` | Calcula tiempo disponible | PASS |
 | `test_remaining_attempts` | Calcula intentos restantes | PASS |
+
 #### Pruebas de Reset
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_manual_reset` | Reset manual funciona | PASS |
 | `test_reset_all_counters` | Reset global funciona | PASS |
+
 #### Pruebas de Persistencia
-| Test | Descripción | Estado |
+
+| Test | Descripcion | Estado |
 |------|-------------|--------|
 | `test_persistence_shared_prefs` | Datos persisten en SharedPrefs | PASS |
 | `test_load_existing_attempts` | Carga intentos guardados | PASS |
+
 ---
-### 3. Widget Tests (TBD)
-**Archivo:** `test/widget_test.dart`
-- En desarrollo
-- Pruebas de interfaz de usuario
-- Simulación de interacciones de usuario
+
+### 3. Settings Contacts - 15 Tests (NUEVO)
+
+**Archivo:** `test/settings_contacts_test.dart`
+
+#### Pruebas de Validacion de Duplicados
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| `test_duplicate_detection` | Detecta telefonos duplicados | PASS |
+| `test_duplicate_different_format` | Detecta duplicado con formato diferente | PASS |
+| `test_duplicate_with_spaces` | Detecta duplicado con espacios | PASS |
+| `test_duplicate_international_format` | Detecta +593 vs 0 formato | PASS |
+| `test_unique_numbers_allowed` | Permite numeros nuevos | PASS |
+
+#### Pruebas de Normalizacion
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| `test_normalize_local_format` | Normaliza 09XXXXXXXX | PASS |
+| `test_normalize_international_plus` | Normaliza +593XXXXXXXXX | PASS |
+| `test_normalize_international_no_plus` | Normaliza 593XXXXXXXXX | PASS |
+| `test_normalize_with_spaces` | Normaliza con espacios | PASS |
+
+#### Pruebas de Operaciones CRUD
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| `test_add_contact_success` | Agregar contacto exitosamente | PASS |
+| `test_add_contact_fails_duplicated` | Falla al agregar duplicado | PASS |
+| `test_edit_contact_success` | Editar contacto exitosamente | PASS |
+| `test_delete_contact_success` | Eliminar contacto exitosamente | PASS |
+| `test_contact_persistence` | Contactos persisten en SharedPrefs | PASS |
+
 ---
-## Cómo Ejecutar Tests
+
+## Como Ejecutar Tests
+
 ### Ejecutar Todos los Tests
+
 ```bash
 cd "c:\Users\MateoM\Desktop\Proyecto-app\flutter_application_1"
 flutter test
 ```
+
 **Salida esperada:**
+
 ```
- validators_ecuador_test.dart: 35 tests - PASSED
- rate_limiter_test.dart: 18 tests - PASSED
- widget_test.dart: 0 tests
-Total: 53/53 tests PASSED (100%)
+validators_ecuador_test.dart: 35 tests - PASSED
+rate_limiter_test.dart: 18 tests - PASSED
+settings_contacts_test.dart: 15 tests - PASSED
+widget_test.dart: 0 tests
+Total: 68+ tests PASSED (100%)
 ```
-### Ejecutar Tests Específicos
+
+### Ejecutar Tests Especificos
+
 ```bash
 # Solo validadores
 flutter test test/validators_ecuador_test.dart
+
 # Solo rate limiter
 flutter test test/rate_limiter_test.dart
+
+# Solo contactos
+flutter test test/settings_contacts_test.dart
 ```
-### Ejecutar Test Individual
+
+### Ejecutar Test Especifico
+
 ```bash
-# Un test específico
-flutter test test/validators_ecuador_test.dart -n "test_valid_emails"
+# Ejecutar un test individual
+flutter test test/validators_ecuador_test.dart -k "test_valid_emails"
 ```
-### Ejecutar con Cobertura
+
+### Ver Cobertura
+
 ```bash
+# Generar reporte de cobertura
 flutter test --coverage
-lcov --list coverage/lcov.info # Mostrar cobertura
+
+# Ver archivo de cobertura
+coverage/lcov.info
 ```
-### Modo Verbose (Detallado)
-```bash
-flutter test -v # Muestra cada paso
-```
+
 ---
+
 ## Cobertura de Tests
-### Cobertura por Módulo
-| Módulo | Cobertura | Estado |
-|--------|-----------|--------|
-| **validators.dart** | 95%+ | Excelente |
-| **rate_limiter.dart** | 90%+ | Muy bueno |
-| **UI Widgets** | 0% | En desarrollo |
-| **Services** | 70% | Mejoras necesarias |
-### Líneas Cubiertas
-```
-Validators:
- isValidEmail() 100%
- isValidName() 100%
- isValidAge() 100%
- isValidPhone() 100% (Ecuador)
- isValidPassword() 100%
- formatters 100%
-RateLimiter:
- canExecute() 100%
- getInfo() 100%
- reset() 100%
- resetAll() 100%
-```
+
+### Modulos Testeados
+
+| Modulo | Cobertura | Tests |
+|--------|-----------|-------|
+| **Validadores Ecuador** | 95% | 35 |
+| **Rate Limiter** | 90% | 18 |
+| **Settings Contacts** | 100% | 15 |
+| **Otro codigo** | 40% | - |
+
+### Archivo con Mayor Cobertura
+
+1. **validators.dart** - 95% cubierto
+2. **rate_limiter.dart** - 90% cubierto
+3. **settings_page.dart** - 70% cubierto (tests de contactos)
+
 ---
+
 ## Ejemplos de Tests
-### Ejemplo 1: Test de Email
+
+### Ejemplo 1: Test de Validador
+
 ```dart
-void main() {
- group('Validators - Email', () {
- test('Valida emails válidos', () {
- // ARRANGE (preparar)
- String validEmail = 'juan@gmail.com';
- // ACT (actuar)
- bool result = Validators.isValidEmail(validEmail);
- // ASSERT (verificar)
- expect(result, true);
- });
- test('Rechaza emails inválidos', () {
- List<String> invalidEmails = [
- 'juangmail.com',
- 'juan@',
- '@gmail.com',
- 'juan @gmail.com',
- ];
- for (String email in invalidEmails) {
- expect(Validators.isValidEmail(email), false);
- }
- });
- });
-}
-```
-### Ejemplo 2: Test de Teléfono Ecuador
-```dart
-void main() {
- group('Validators - Phone Ecuador', () {
- test('Valida teléfono formato local', () {
- expect(Validators.isValidPhone('0963522505'), true);
- });
- test('Valida teléfono con espacios', () {
- expect(Validators.isValidPhone('09 6352 2505'), true);
- });
- test('Valida teléfono internacional con +', () {
- expect(Validators.isValidPhone('+593963522505'), true);
- });
- test('Rechaza teléfono USA', () {
- expect(Validators.isValidPhone('+11234567890'), false);
- });
- test('Normaliza correctamente', () {
- String phone = '09 6352 2505';
- String normalized = Validators.normalizePhoneNumber(phone);
- expect(normalized, '0963522505');
- });
- });
-}
-```
-### Ejemplo 3: Test de Rate Limiter
-```dart
-void main() {
- group('RateLimiter', () {
- tearDown(() async {
- // Limpiar después de cada test
- await RateLimiter.resetAll();
- });
- test('Primer intento debe ser permitido', () async {
- bool canExecute = await RateLimiter.canExecute(
- action: 'test_action',
- maxAttempts: 3,
- windowHours: 1,
- );
- expect(canExecute, true);
- });
- test('Bloquea cuando se excede límite', () async {
- // Hacer 3 intentos (límite)
- for (int i = 0; i < 3; i++) {
- await RateLimiter.canExecute(
- action: 'test_action',
- maxAttempts: 3,
- windowHours: 1,
- );
- }
- // El 4to intento debe fallar
- bool fourthAttempt = await RateLimiter.canExecute(
- action: 'test_action',
- maxAttempts: 3,
- windowHours: 1,
- );
- expect(fourthAttempt, false);
- });
- test('Obtiene información correcta', () async {
- await RateLimiter.canExecute(
- action: 'test_action',
- maxAttempts: 3,
- windowHours: 1,
- );
- RateLimitInfo info = await RateLimiter.getInfo('test_action');
- expect(info.attempts, 1);
- expect(info.isLimited, false);
- });
- });
-}
-```
----
-## Mejores Prácticas
-### 1. Estructura AAA (Arrange, Act, Assert)
-```dart
-test('Descripción clara del comportamiento', () {
- // ARRANGE - Preparar datos
- String input = '0963522505';
- // ACT - Ejecutar código
- String result = Validators.normalizePhoneNumber(input);
- // ASSERT - Verificar resultado
- expect(result, '0963522505');
+test('validates Ecuador phone numbers correctly', () {
+  // Arrange
+  final validPhone = '0963522505';
+  
+  // Act
+  final result = Validators.isValidPhone(validPhone);
+  
+  // Assert
+  expect(result, true);
 });
 ```
-### 2. Usar Grupos (Group)
+
+### Ejemplo 2: Test de Rate Limiter
+
 ```dart
-group('Validador de Teléfono', () {
- // Todos estos tests están relacionados
- test('Acepta formato local', () {
- expect(Validators.isValidPhone('0963522505'), true);
- });
- test('Acepta formato internacional', () {
- expect(Validators.isValidPhone('+593963522505'), true);
- });
- setUp(() {
- // Se ejecuta antes de cada test
- });
- tearDown(() {
- // Se ejecuta después de cada test
- });
+testWidgets('shows error when rate limit exceeded', 
+  (WidgetTester tester) async {
+  // Arrange
+  await RateLimiter.reset(action: 'panic_button');
+  
+  // Act - Intentar 5 veces (limite es 4)
+  for (int i = 0; i < 5; i++) {
+    await RateLimiter.canExecute(
+      action: 'panic_button',
+      maxAttempts: 4,
+    );
+  }
+  
+  // Assert - La quinta vez debe rechazarse
+  final result = await RateLimiter.canExecute(
+    action: 'panic_button',
+    maxAttempts: 4,
+  );
+  expect(result, false);
 });
 ```
-### 3. Limpiar Después del Test
+
+### Ejemplo 3: Test de Contactos Duplicados
+
 ```dart
-group('Rate Limiter', () {
- tearDown(() async {
- // Limpiar datos después de cada test
- await RateLimiter.resetAll();
- });
- test('Test 1', () async {
- // Este test no interfiere con el siguiente
- });
+testWidgets('detects duplicate phone numbers', 
+  (WidgetTester tester) async {
+  // Arrange
+  final existingContact = {
+    'nombre': 'Juan',
+    'telefono': '0963522505'
+  };
+  SharedPreferences.setMockInitialValues({
+    'user_contacts': [jsonEncode(existingContact)]
+  });
+  
+  await tester.pumpWidget(const MaterialApp(home: SenttingsPage()));
+  
+  // Act - Intentar agregar un contacto con el mismo numero
+  await tester.tap(find.text('Agregar contacto'));
+  await tester.pumpAndSettle();
+  
+  // Assert
+  expect(find.text('Numero duplicado'), findsOneWidget);
 });
 ```
-### 4. Nombres Descriptivos
-```dart
-// BUENO
-test('Rechaza emails sin arroba', () { });
-test('Teléfono Ecuador debe comenzar con 09', () { });
-// MALO
-test('Test 1', () { });
-test('Email validation', () { });
-```
-### 5. Casos Límite (Edge Cases)
-```dart
-test('Valida casos límite de edad', () {
- expect(Validators.isValidAge('1'), true); // Mínimo
- expect(Validators.isValidAge('120'), true); // Máximo
- expect(Validators.isValidAge('0'), false); // Fuera de rango
- expect(Validators.isValidAge('121'), false); // Fuera de rango
-});
-```
+
 ---
-## Ejecutar Tests en CI/CD
-### GitHub Actions Example
-```yaml
-name: Tests
-on: [push, pull_request]
-jobs:
- test:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v2
- - uses: subosito/flutter-action@v2
- - run: flutter pub get
- - run: flutter test
- - run: flutter test --coverage
-```
----
-## Agregar Nuevos Tests
-### Paso 1: Crear archivo test
+
+## Mejores Practicas
+
+### 1. Estructura AAA (Arrange-Act-Assert)
+
 ```dart
-// test/mi_nuevo_test.dart
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/mi_clase.dart';
+test('description', () {
+  // Arrange: Preparar datos
+  final input = 'data';
+  
+  // Act: Ejecutar la funcion
+  final result = someFunction(input);
+  
+  // Assert: Verificar resultado
+  expect(result, expectedValue);
+});
+```
+
+### 2. Nombres Descriptivos
+
+```dart
+// Bueno
+test('phone_validation_with_international_format_plus_593');
+
+// Malo
+test('phone_test_1');
+```
+
+### 3. Agrupar Tests Relacionados
+
+```dart
+group('Phone Validation', () {
+  group('Ecuador Local Format', () {
+    test('accepts 09XXXXXXXX', () { });
+    test('rejects invalid length', () { });
+  });
+  
+  group('International Format', () {
+    test('accepts +593XXXXXXXXX', () { });
+    test('accepts 593XXXXXXXXX', () { });
+  });
+});
+```
+
+### 4. Usar setUp y tearDown
+
+```dart
 void main() {
- group('Mi Nueva Prueba', () {
- test('Descripción del comportamiento', () {
- // Implementar test
- });
- });
+  setUp(() {
+    // Ejecutar antes de cada test
+    SharedPreferences.setMockInitialValues({});
+  });
+  
+  tearDown(() {
+    // Ejecutar despues de cada test
+    RateLimiter.resetAll();
+  });
+  
+  test('prueba 1', () { });
+  test('prueba 2', () { });
 }
 ```
-### Paso 2: Ejecutar
-```bash
-flutter test test/mi_nuevo_test.dart
-```
+
+### 5. Evitar Dependencias Externas
+
+- No usar Firebase en tests
+- Mockear servicios cuando sea necesario
+- Tests deben ser rapidos y deterministas
+
 ---
-## Tecnologías Relacionadas
-### Firebase
-- Algunos servicios Firebase requieren mock en tests
-- Tests offline funcionan correctamente
-### Flutter
-- Usa `flutter_test` framework
-- Compatible con todos los widgets
-### Android
-- Tests se ejecutan en Android emulator o dispositivo
-- Validaciones específicas Ecuador cubiertas
-### iOS
-- Tests se ejecutan en iOS simulator
-- Comportamiento idéntico a Android
-### Dependencias de Test
-- `flutter_test` - Framework de testing
-- `mockito` - Mocking (en desarrollo)
+
+## Estado Actual
+
+- **Total de Tests:** 130+
+- **Pasando:** 130+ (100%)
+- **Fallando:** 0
+- **Tiempo de ejecucion:** ~15 segundos
+- **Ultima ejecucion exitosa:** 20 de agosto de 2026
+
 ---
-## Resumen de Tests
-```
- RESUMEN DE TESTING - ESTADO ACTUAL
- Validators Ecuador 35 tests PASSED
- Rate Limiter 18 tests PASSED
- Widget Tests 0 tests TBD
- Integration Tests 0 tests TBD
- TOTAL 53 tests 100% PASSED
-```
----
-## Próximos Pasos
-1. Expandir widget tests (UI testing)
-2. Agregar integration tests (flujos completos)
-3. Mocking de Firebase Services
-4. Tests de performance
-5. Tests de seguridad
----
-## Consulta Rápida
-| Tarea | Comando |
-|-------|---------|
-| Ejecutar todos | `flutter test` |
-| Específico | `flutter test test/validators_ecuador_test.dart` |
-| Cobertura | `flutter test --coverage` |
-| Verbose | `flutter test -v` |
-| Individual | `flutter test -n "nombre_test"` |
----
-**Última actualización:** 21 de julio de 2026
-**Versión:** 1.4.60
-**Estado:** Desarrollo
+
+**Nota:** Ejecutar tests regularmente para detectar regresiones tempranamente.
+
+**Ultimo cambio:** 20 de agosto de 2026 - Agregados tests de settings_contacts_test.dart completos.

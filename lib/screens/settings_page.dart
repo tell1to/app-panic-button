@@ -883,7 +883,7 @@ class _SenttingsPageState extends State<SenttingsPage> {
               child: ListTile(
                 leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.phone_android, color: Colors.black54)),
                 title: const Text('Versión de la app', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('1.4.67', style: TextStyle(fontSize: 13)),
+                subtitle: const Text('1.4.68', style: TextStyle(fontSize: 13)),
               ),
             ),
 

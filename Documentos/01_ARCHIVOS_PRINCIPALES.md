@@ -1,39 +1,47 @@
-# Archivos Principales de la Aplicaci�n
-**�ltima actualizaci�n:** 6 de agosto de 2026  
-**Versi�n:** 1.4.60  
+# Archivos Principales de la Aplicacion
+
+**Ultima actualizacion:** 20 de agosto de 2026  
+**Version:** 1.4.67  
 **Estado:** Desarrollo (Estructura Reorganizada)
 
 IMPORTANTE: A partir del 6 de agosto de 2026, la estructura del directorio `lib/` ha sido reorganizada. Ver [11_ESTRUCTURA_DIRECTORIO.md](11_ESTRUCTURA_DIRECTORIO.md) para detalles.
 
 ---
-## �ndice
-1. [Descripci�n General](#descripci�n-general)
+
+## Indice
+
+1. [Descripcion General](#descripcion-general)
 2. [Cambios de Estructura](#cambios-de-estructura)
 3. [Archivo main.dart](#archivo-maindart)
-4. [Archivo settings_page.dart](#archivo-settings_pagedart-anteriormente-senttingsdart)
+4. [Archivo settings_page.dart](#archivo-settings_pagedart)
 5. [Archivo options_page.dart](#archivo-options_pagedart)
 6. [Archivo documents_page.dart](#archivo-documents_pagedart)
 7. [Archivo symptoms_page.dart](#archivo-symptoms_pagedart)
-8. [Archivo preferences.dart](#archivo-preferencesdart)
-9. [Tabla Comparativa](#tabla-comparativa)
----
-## Descripci�n General
-Los archivos principales son las **p�ginas/pantallas** de la aplicaci�n Flutter. Cada uno corresponde a una secci�n espec�fica de la interfaz de usuario y maneja:
-- L�gica de presentaci�n (UI)
-- Interacci�n con el usuario
-- Comunicaci�n con servicios
-- Gesti�n de estado local
-
-**Localizaci�n:** `lib/screens/` (tras reorganizaci�n del 6 de agosto)
+8. [Archivo tutorial_screen.dart](#archivo-tutorial_screendart)
+9. [Archivo preferences.dart](#archivo-preferencesdart)
 
 ---
+
+## Descripcion General
+
+Los archivos principales son las **paginas/pantallas** de la aplicacion Flutter. Cada uno corresponde a una seccion especifica de la interfaz de usuario y maneja:
+
+- Logica de presentacion (UI)
+- Interaccion con el usuario
+- Comunicacion con servicios
+- Gestion de estado local
+
+**Localizacion:** `lib/screens/` (tras reorganizacion del 6 de agosto)
+
+---
+
 ## Cambios de Estructura
 
-### Reorganizaci�n Realizada (6 de Agosto de 2026)
+### Reorganizacion Realizada (6 de Agosto de 2026)
 
-La carpeta `lib/` ha sido reorganizada en subcarpetas tem�ticas para mejorar la mantenibilidad:
+La carpeta `lib/` ha sido reorganizada en subcarpetas tematicas para mejorar la mantenibilidad:
 
-| Archivo Anterior | Nueva Ubicaci�n | Nuevo Nombre |
+| Archivo Anterior | Nueva Ubicacion | Nuevo Nombre |
 |------------------|-----------------|--------------|
 | `lib/main.dart` | `lib/` | `main.dart` (sin cambios) |
 | `lib/senttings.dart` | `lib/screens/` | `settings_page.dart` |
@@ -44,506 +52,477 @@ La carpeta `lib/` ha sido reorganizada en subcarpetas tem�ticas para mejorar l
 | `lib/preferences.dart` | `lib/utils/` | `preferences.dart` |
 | `lib/validators/` | `lib/utils/` | `validators/` |
 
-###  Nueva Estructura de Directorios
+### Nueva Estructura de Directorios
 
 ```
 lib/
-+-- main.dart
-+-- screens/              ? Todas las pantallas UI
-�   +-- settings_page.dart
-�   +-- options_page.dart
-�   +-- documents_page.dart
-�   +-- symptoms_page.dart
-�   +-- tutorial_screen.dart
-+-- services/            ? L�gica de negocio (ya exist�a)
-�   +-- firebase_service.dart
-�   +-- alert_service.dart
-�   +-- ...
-+-- utils/               ? Utilidades
-�   +-- preferences.dart
-�   +-- validators/
-�       +-- validators.dart
-+-- examples/            ? Ejemplos de c�digo
-�   +-- ejemplos_ecuador.dart
-�   +-- ejemplos_fase_1.dart
-�   +-- ejemplos_fase_3.dart
-+-- testing/             ? Pruebas (ya exist�a)
-�   +-- ...
-+-- models/              ? Reservado para modelos
+ main.dart
+ screens/                 - Todas las pantallas UI
+   settings_page.dart
+   options_page.dart
+   documents_page.dart
+   symptoms_page.dart
+   tutorial_screen.dart
+ services/                - Logica de negocio
+   firebase_service.dart
+   alert_service.dart
+   rate_limiter.dart
+   appointment_reminder_service.dart
+   encryption_service.dart
+   ...
+ utils/                   - Utilidades
+   preferences.dart
+   validators/
+     validators.dart
+ examples/                - Ejemplos de codigo
+ testing/                 - Pruebas
+ models/                  - Modelos de datos (reservado)
 ```
 
 ### Beneficios
 
-- [OK] **Mejor organizaci�n:** Cada tipo de archivo tiene su lugar
-- [OK] **Escalabilidad:** F�cil agregar nuevas pantallas
+- [OK] **Mejor organizacion:** Cada tipo de archivo tiene su lugar
+- [OK] **Escalabilidad:** Facil agregar nuevas pantallas
 - [OK] **Mantenibilidad:** Estructura clara y predecible
-- [OK] **Importaciones claras:** Rutas relativas indican la relaci�n entre archivos
-
-### ?? Documentaci�n Completa
-
-Para ver la estructura completa y detallada, consulta: [11_ESTRUCTURA_DIRECTORIO.md](11_ESTRUCTURA_DIRECTORIO.md)
+- [OK] **Importaciones claras:** Rutas relativas indican la relacion entre archivos
 
 ---
+
 ## Archivo: main.dart
-### Informaci�n General
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicaci�n** | `lib/main.dart` |
-| **L�neas de c�digo** | ~800 |
-| **Responsabilidad** | P�gina principal, punto de entrada, bot�n de p�nico |
+| **Ubicacion** | `lib/main.dart` |
+| **Lineas de codigo** | ~1200 |
+| **Responsabilidad** | Pagina principal, punto de entrada, boton de panico |
 | **Tipo de Widget** | StatefulWidget |
+
 ### Funcionalidades Principales
-#### 1. **Bot�n de P�nico**
+
+#### 1. **Boton de Panico**
+
 ```dart
 // Mantener presionado por 1.2 segundos para activar
-// - Verifica rate limiting (m�ximo 3 intentos en 3 horas)
-// - Obtiene ubicaci�n GPS actual
+// - Verifica rate limiting (maximo 4 intentos en 2 minutos)
+// - Obtiene ubicacion GPS actual
 // - Crea alerta en Firebase Database
-// - Realiza llamada telef�nica
+// - Realiza llamada telefonica
 // - Muestra indicador visual de intentos restantes
 ```
-#### 2. **Obtenci�n de Ubicaci�n**
+
+#### 2. **Obtencion de Ubicacion**
+
 ```dart
-// Solicita permisos de ubicaci�n
+// Solicita permisos de ubicacion
 // Obtiene coordenadas GPS (latitud, longitud)
-// Convierte coordenadas a direcci�n legible
+// Convierte coordenadas a direccion legible
+// Guarda ultima ubicacion conocida para casos sin conexion
 // Usa: geolocator + geocoding
 ```
+
 #### 3. **Indicador de Intentos**
+
 ```dart
-// Muestra intentos restantes: X/3
+// Muestra intentos restantes: X/4
 // Se actualiza en tiempo real
-// Colores seg�n disponibilidad (verde/amarillo/rojo)
+// Colores segun disponibilidad (verde/amarillo/rojo)
+// Muestra contador regresivo cuando esta limitado
 ```
-#### 4. **Integraci�n Firebase**
+
+#### 4. **Integracion Firebase**
+
 ```dart
 // - Registra evento "emergency_activated"
 // - Crea documento en Realtime Database
 // - Reporta errores a Crashlytics
+// - Sincroniza con backend para notificaciones
 ```
-### Dependencias T�cnicas
-| Tecnolog�a | Uso |
+
+### Dependencias Tecnicas
+
+| Tecnologia | Uso |
 |-----------|-----|
 | **Flutter** | Framework UI |
 | **Material Design** | Componentes visuales |
-| **geolocator** | Obtenci�n de ubicaci�n GPS |
-| **geocoding** | Conversi�n de coordenadas a direcci�n |
-| **url_launcher** | Realizar llamadas telef�nicas |
-| **FirebaseService** | Integraci�n Firebase Analytics |
-| **AlertService** | Gesti�n de alertas |
+| **geolocator** | Obtencion de ubicacion GPS |
+| **geocoding** | Conversion de coordenadas a direccion |
+| **url_launcher** | Realizar llamadas telefonicas |
+| **FirebaseService** | Integracion Firebase Analytics |
+| **AlertService** | Gestion de alertas |
 | **RateLimiter** | Control de intentos |
-### Pantallas/Widgets
-```
-InicioPage (StatefulWidget)
- AppBar (t�tulo + navegaci�n)
- GestureDetector (bot�n p�nico)
- Text (indicador intentos)
- Container (mapa visual)
- FloatingActionButton (menu contactos)
-```
+
 ### Permisos Requeridos
+
 - `INTERNET` - Para conectar con Firebase
-- `ACCESS_FINE_LOCATION` - Para obtener ubicaci�n GPS
-- `ACCESS_COARSE_LOCATION` - Para ubicaci�n aproximada
+- `ACCESS_FINE_LOCATION` - Para obtener ubicacion GPS
+- `ACCESS_COARSE_LOCATION` - Para ubicacion aproximada
 - `CALL_PHONE` - Para realizar llamadas
+- `POST_NOTIFICATIONS` - Para notificaciones en Android 13+
+
 ### Almacenamiento Usado
-- **SharedPreferences** - Contador de intentos
+
+- **SharedPreferences** - Contador de intentos, ultima ubicacion
 - **Firebase Database** - Guardado de alertas
 - **Firebase Analytics** - Eventos de emergencia
-### Flujo de Ejecuci�n
+- **Secure Storage** - Datos sensibles
+
+### Flujo de Ejecucion
+
 ```
 1. Usuario abre la app
-2. Se solicita permiso de ubicaci�n
-3. Se verifica si Firebase est� inicializado
-4. Se carga el contador de intentos
+2. Se solicita permiso de ubicacion
+3. Se verifica si Firebase esta inicializado
+4. Se carga el contador de intentos (rate limiter)
 5. Se muestra la interfaz principal
-6. Usuario mantiene presionado el bot�n por 1.2s
+6. Usuario mantiene presionado el boton por 1.2s
 7. Se verifica rate limit
-8. Se obtiene ubicaci�n GPS
+8. Se obtiene ubicacion GPS (o ultima conocida si no hay)
 9. Se registra en Firebase
 10. Se realiza llamada de emergencia
 ```
+
 ---
-## Archivo: settings_page.dart (Anteriormente: senttings.dart)
-### Informaci�n General
+
+## Archivo: settings_page.dart
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicaci�n anterior** | `lib/senttings.dart` |
-| **Ubicaci�n actual** | `lib/screens/settings_page.dart` |
-| **L�neas de c�digo** | ~250 |
-| **Responsabilidad** | Configuraci�n de perfil y contacto de emergencia |
+| **Ubicacion** | `lib/screens/settings_page.dart` |
+| **Ubicacion anterior** | `lib/senttings.dart` |
+| **Lineas de codigo** | ~600 |
+| **Responsabilidad** | Configuracion de perfil y contactos |
 | **Tipo de Widget** | StatefulWidget |
+
 ### Funcionalidades Principales
+
 #### 1. **Datos de Perfil del Usuario**
+
 ```dart
-// - Nombre
-// - C�dula/ID (CI)
+// - Nombre y apellidos
+// - Cedula/ID (CI)
 // - Edad
-// - Contacto de emergencia (tel�fono)
-// - Informaci�n m�dica relevante
+// - Tipo de sangre
+// - Foto de perfil
+// - Enfermedades catastroficas
 ```
-#### 2. **Validaci�n de Datos**
+
+#### 2. **Gestion de Contactos de Emergencia**
+
 ```dart
-// - Validaci�n de email
-// - Validaci�n de nombre
-// - Validaci�n de edad
-// - Validaci�n de tel�fono Ecuador
-// - Normalizaci�n de n�meros telef�nicos
+// - Agregar contactos (nombre + telefono)
+// - Editar contactos existentes
+// - Eliminar contactos
+// - Validar telefonos duplicados (normalizados)
+// - Normalizar formato de telefonos
 ```
-#### 3. **Almacenamiento Seguro**
+
+#### 3. **Validacion de Datos**
+
 ```dart
-// - Encriptaci�n de datos sensibles
+// - Validacion de nombre (solo letras y espacios)
+// - Validacion de edad (1-120)
+// - Validacion de telefono Ecuador (09... o +593...)
+// - Normalizacion de numeros telefonicos
+// - Deteccion de duplicados aunque cambien formato
+```
+
+#### 4. **Almacenamiento Seguro**
+
+```dart
+// - Encriptacion de datos sensibles
 // - Uso de flutter_secure_storage
 // - Hardware KeyStore (Android) / Keychain (iOS)
+// - SharedPreferences para datos no sensibles
 ```
-#### 4. **Interfaz de Configuraci�n**
-```dart
-// - Campos de entrada para datos
-// - Botones guardar/borrar
-// - Validaci�n en tiempo real
-// - Mensajes de error en espa�ol
-```
-### Dependencias T�cnicas
-| Tecnolog�a | Uso |
-|-----------|-----|
-| **Flutter** | Framework UI |
-| **Validators** | Validaci�n de datos Ecuador |
-| **SecureStorageService** | Almacenamiento encriptado |
-| **SharedPreferences** | Datos no sensibles |
-### Widgets Principales
-```
-SenttingsPage (StatefulWidget)
- TextField (nombre)
- TextField (email)
- TextField (tel�fono)
- TextField (contacto emergencia)
- RaisedButton (guardar)
- RaisedButton (borrar datos)
-```
-### Permisos Requeridos
-- Ninguno adicional (usa datos locales)
-### Almacenamiento Usado
-- **SecureStorageService** - Datos encriptados (contacto, informaci�n m�dica)
-- **SharedPreferences** - Preferencias de usuario
+
+### Validaciones Incluidas
+
+- **Nombre:** Solo letras, espacios, y caracteres con acento
+- **Edad:** Numeros entre 1 y 120
+- **Telefono:** Formato local (09XXXXXXXX) o internacional (+593XXXXXXXXX)
+- **CI:** 10 digitos numericos
+- **Contactos duplicados:** Detecta el mismo numero aunque use formatos diferentes
+
 ---
-## Archivo: options_page.dart (Anteriormente: options.dart)
-### Informaci�n General
+
+## Archivo: options_page.dart
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicaci�n anterior** | `lib/options.dart` |
-| **Ubicaci�n actual** | `lib/screens/options_page.dart` |
-| **L�neas de c�digo** | ~1900 |
-| **Responsabilidad** | Historial de alertas e informaci�n m�dica |
+| **Ubicacion** | `lib/screens/options_page.dart` |
+| **Ubicacion anterior** | `lib/options.dart` |
+| **Lineas de codigo** | ~1500 |
+| **Responsabilidad** | Informacion medica y alertas avanzadas |
 | **Tipo de Widget** | StatefulWidget |
+
 ### Funcionalidades Principales
-#### 1. **Historial de Alertas**
+
+#### 1. **Informacion de Seguro**
+
 ```dart
-// - Lista de todas las alertas activadas
-// - Informaci�n: fecha, hora, ubicaci�n, estado
-// - Editar estado (activa resuelta falsa alarma)
-// - Eliminar alertas antiguas
+// - Compania aseguradora
+// - Numero de poliza
+// - Telefono de contacto
+// - Persistencia en SharedPreferences
 ```
-#### 2. **Informaci�n M�dica**
+
+#### 2. **Condiciones Medicas**
+
 ```dart
-// - Condiciones m�dicas cr�nicas
-// - Medicamentos que toma
-// - Alergias conocidas
-// - Citas m�dicas pr�ximas
-// - Informaci�n del seguro m�dico
+// - Diagnosticos
+// - Desde cuando se tiene la condicion
+// - Historial editable
+// - Almacenamiento local
 ```
-#### 3. **Gesti�n de Contactos de Emergencia**
+
+#### 3. **Medicamentos**
+
 ```dart
-// - Agregar/editar/eliminar contactos
-// - Tel�fonos de contacto
-// - Relaci�n con el usuario
+// - Nombre del medicamento
+// - Dosis
+// - Frecuencia
+// - Lista editable
+// - Sincronizacion offline
 ```
-#### 4. **Di�logos de Configuraci�n**
+
+#### 4. **Citas Medicas**
+
 ```dart
-// - Di�logo de condiciones m�dicas
-// - Di�logo de medicamentos
-// - Di�logo de alergias
-// - Di�logo de citas m�dicas
-// - Di�logo de seguros
+// - Especialista/Doctor
+// - Fecha y hora
+// - Lugar
+// - Recordatorios automaticos
+// - Integracion con AppointmentReminderService
 ```
-### Dependencias T�cnicas
-| Tecnolog�a | Uso |
-|-----------|-----|
-| **Flutter** | Framework UI |
-| **SharedPreferences** | Persistencia de datos locales |
-| **path_provider** | Acceso a directorios de documentos |
-| **dart:io** | Manejo de archivos JSON |
-| **AlertService** | Gesti�n de alertas |
-### Widgets Principales
-```
-OptionsPage (StatefulWidget)
- AlertHistory Dialog
- Lista de alertas
- Botones editar/eliminar
- Medical Conditions Dialog
- Medications Dialog
- Appointments Dialog
- Allergies Dialog
- Insurance Dialog
-```
-### Permisos Requeridos
-- `WRITE_EXTERNAL_STORAGE` - Para guardar archivos JSON
-- `READ_EXTERNAL_STORAGE` - Para leer archivos guardados
-### Almacenamiento Usado
-- **SharedPreferences** - Datos estructurados (JSON string)
-- **Archivos JSON** - Historial de alertas en carpeta `Documentos/alerts/`
-- **Firebase Database** - Sincronizaci�n de alertas en la nube
-### Estructura de Datos
+
+#### 5. **Alergias**
+
 ```dart
-// Alerta
-{
- 'id': 'CI_mod1',
- 'datetime': '2025-12-21T10:30:00Z',
- 'location': 'Calle 10 y Amazonas, Quito',
- 'description': 'Dolor en el pecho',
- 'status': 'active' | 'resolved' | 'false_alarm'
-}
-// Condici�n m�dica
-{
- 'diagnosis': 'Hipertensi�n',
- 'since': '2020-01-15'
-}
-// Medicamento
-{
- 'name': 'Lisinopril 10mg',
- 'frequency': 'Una vez al d�a'
-}
-// Cita m�dica
-{
- 'date': '2025-12-25T14:00',
- 'doctor': 'Dr. Juan P�rez',
- 'specialty': 'Cardiolog�a'
-}
-// Alergia
-{
- 'substance': 'Penicilina',
- 'severity': 'Grave'
-}
+// - Tipo de alergia
+// - Severidad
+// - Historial editable
 ```
+
+#### 6. **Historial de Alertas**
+
+```dart
+// - Visualizar alertas activadas
+// - Ver detalles de cada alerta
+// - Editar descripcion y estado
+// - Exportar a archivos JSON
+// - Almacenamiento persistente
+```
+
+### Servicios Utilizados
+
+- **AppointmentReminderService** - Recordatorios de citas
+- **AlertService** - Gestion de alertas
+- **RateLimiter** - Control de intentos
+- **SecureStorageService** - Almacenamiento seguro
+- **Validators** - Validaciones
+- **permission_handler** - Solicitud de permisos
+
 ---
-## Archivo: documents_page.dart (Anteriormente: documents.dart)
-### Informaci�n General
+
+## Archivo: symptoms_page.dart
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicaci�n anterior** | `lib/documents.dart` |
-| **Ubicaci�n actual** | `lib/screens/documents_page.dart` |
-| **L�neas de c�digo** | ~300 |
-| **Responsabilidad** | Gesti�n de documentos m�dicos digitales |
+| **Ubicacion** | `lib/screens/symptoms_page.dart` |
+| **Lineas de codigo** | ~400 |
+| **Responsabilidad** | Registro personal de sintomas |
 | **Tipo de Widget** | StatefulWidget |
+
 ### Funcionalidades Principales
-#### 1. **Subida de Documentos**
+
+#### 1. **Registro de Sintomas**
+
 ```dart
-// - Recetas m�dicas
-// - An�lisis de laboratorio
-// - Radiograf�as (im�genes)
-// - Reportes m�dicos
-// - Carn� de vacunaci�n
+// - Descripcion del sintoma
+// - Fecha del registro
+// - Severidad (1-10)
+// - ID unico por entrada
+// - Ordenamiento por fecha (mas reciente primero)
 ```
-#### 2. **Visualizaci�n de Documentos**
+
+#### 2. **Persistencia Local**
+
 ```dart
-// - Vista previa de im�genes
-// - Lista de todos los documentos
-// - Informaci�n: nombre, fecha, tipo
+// - Almacenamiento en SharedPreferences
+// - Formato JSON
+// - Contador secuencial de IDs
+// - Carga y guardado automatico
 ```
-#### 3. **Gesti�n de Archivos**
+
+#### 3. **Interfaz Intuitiva**
+
 ```dart
-// - Descargar documentos
-// - Eliminar documentos
-// - Compartir con profesionales
+// - Slider para severidad (escala de colores)
+// - Verde (leve) a Rojo (severo)
+// - Dialogo para agregar nuevas entradas
+// - Dialogo para editar entradas existentes
+// - Boton para eliminar con confirmacion
 ```
-### Dependencias T�cnicas
-| Tecnolog�a | Uso |
-|-----------|-----|
-| **Flutter** | Framework UI |
-| **file_picker** | Seleccionar archivos |
-| **path_provider** | Acceso a directorios |
-| **image_picker** | Capturar fotos con c�mara |
-### Widgets Principales
+
+#### 4. **Visualizacion**
+
+```dart
+// - Lista ordenada por fecha
+// - Color del borde segun severidad
+// - Fecha formateada legible
+// - Texto del sintoma resumido
 ```
-DocumentsPage (StatefulWidget)
- FloatingActionButton (a�adir documento)
- ListView (lista de documentos)
- DocumentCard
- Miniatura
- Nombre
- Fecha
- Botones (ver/eliminar)
- PhotoViewGallery (vista ampliada)
-```
-### Permisos Requeridos
-- `READ_EXTERNAL_STORAGE` - Para leer documentos
-- `WRITE_EXTERNAL_STORAGE` - Para guardar documentos
-- `CAMERA` - Para capturar fotos de documentos
-- `INTERNET` - Para cargar a la nube
-### Almacenamiento Usado
-- **Archivos locales** - En carpeta Documentos del dispositivo
-- **Firebase Storage** - Sincronizaci�n en la nube
+
 ---
-## Archivo: symptoms_page.dart (Anteriormente: symptoms.dart)
-### Informaci�n General
+
+## Archivo: tutorial_screen.dart
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicaci�n anterior** | `lib/symptoms.dart` |
-| **Ubicaci�n actual** | `lib/screens/symptoms_page.dart` |
-| **L�neas de c�digo** | ~400 |
-| **Responsabilidad** | Registro y seguimiento de s�ntomas |
+| **Ubicacion** | `lib/screens/tutorial_screen.dart` |
+| **Lineas de codigo** | ~1300 |
+| **Responsabilidad** | Tutorial de bienvenida para nuevos usuarios |
 | **Tipo de Widget** | StatefulWidget |
+
 ### Funcionalidades Principales
-#### 1. **Registro de S�ntomas**
+
+#### 1. **Flujo de Paginas (5 paginas)**
+
+```
+Pagina 0: Bienvenida
+ - Titulo y descripcion
+ - Boton "Siguiente"
+ 
+Pagina 1: Navegacion
+ - Explicacion de cada seccion
+ - Tarjetas informativas
+ 
+Pagina 2: Perfil Personal
+ - Formulario para datos personales
+ - Nombre, apellidos, CI, edad
+ - Tipo de sangre
+ - Foto de perfil
+ 
+Pagina 3: Contacto de Emergencia
+ - Nombre del contacto
+ - Numero de telefono
+ - Validacion de datos
+ 
+Pagina 4: Modulo de Opciones
+ - Explicacion de funcionalidades avanzadas
+ - Informacion medica
+ - Citas y medicamentos
+ 
+Pagina 5: Inicio
+ - Resumen y bienvenida final
+ - Opcion para comenzar a usar la app
+```
+
+#### 2. **Validaciones Integradas**
+
 ```dart
-// - Seleccionar s�ntomas comunes
-// - Describir s�ntomas en detalle
-// - Nivel de severidad (leve/moderado/grave)
-// - Hora de inicio
-// - Duraci�n estimada
+// - Validacion de nombre (isValidName)
+// - Validacion de CI (10 digitos)
+// - Validacion de edad (1-120)
+// - Validacion de telefono Ecuador
+// - Validacion de tipo de sangre (lista predefinida)
 ```
-#### 2. **Historial de S�ntomas**
+
+#### 3. **Guardado de Datos**
+
 ```dart
-// - Ver s�ntomas registrados
-// - Fecha y hora de cada registro
-// - Identificar patrones
-// - Exportar para m�dico
+// - Almacenamiento en SecureStorageService
+// - Encriptacion de datos sensibles
+// - Persistencia en SharedPreferences
+// - Marca tutorial como completado
 ```
-#### 3. **Alertas Inteligentes**
+
+#### 4. **Control de Tutorial**
+
 ```dart
-// - Notificar si s�ntomas son graves
-// - Sugerir llamar m�dico
-// - Opci�n de crear alerta de emergencia
+static Future<bool> isTutorialCompleted() 
+static Future<void> markTutorialCompleted()
+
+// Permite verificar si el usuario ya paso el tutorial
+// Evita mostrar el tutorial en futuros lanzamientos
 ```
-### Dependencias T�cnicas
-| Tecnolog�a | Uso |
-|-----------|-----|
-| **Flutter** | Framework UI |
-| **SharedPreferences** | Guardado local de s�ntomas |
-| **NotificationService** | Alertas de s�ntomas graves |
-### Widgets Principales
+
+#### 5. **Interfaz Responsiva**
+
+```dart
+// - Adaptable a diferentes tamaños de pantalla
+// - PageController para navegacion entre paginas
+// - Botones Anterior/Siguiente/Saltar
+// - Indicador de pagina actual
 ```
-SymptomsPage (StatefulWidget)
- SymptomSelector (checkboxes)
- TextArea (descripci�n)
- Slider (severidad)
- TimePicker (hora de inicio)
- Button (guardar)
- ListView (historial)
-```
-### Permisos Requeridos
-- Ninguno adicional (datos locales)
-### Almacenamiento Usado
-- **SharedPreferences** - Historial de s�ntomas
-- **Firebase Database** - Sincronizaci�n en la nube
+
+### Flujo de Datos
+
+1. Usuario abre app por primera vez
+2. `main.dart` verifica si tutorial fue completado
+3. Si no, navega a `TutorialScreen`
+4. Usuario completa 5 paginas del tutorial
+5. Datos se guardan en SecureStorage
+6. Tutorial se marca como completado
+7. Siguiente lanzamiento muestra pantalla principal
+
 ---
+
 ## Archivo: preferences.dart
-### Informaci�n General
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicaci�n anterior** | `lib/preferences.dart` |
-| **Ubicaci�n actual** | `lib/utils/preferences.dart` |
-| **L�neas de c�digo** | ~150 |
-| **Responsabilidad** | Estados globales y preferencias de aplicaci�n |
-| **Tipo** | Singleton (clase est�tica) |
-### Funcionalidades Principales
-#### 1. **Preferencias Globales**
+| **Ubicacion** | `lib/utils/preferences.dart` |
+| **Lineas de codigo** | ~100 |
+| **Responsabilidad** | Estado global y notificadores |
+| **Tipo** | ValueNotifier, Variables globales |
+
+### Contenido
+
 ```dart
-// - Tema (claro/oscuro)
-// - Idioma de la aplicaci�n
-// - Notificaciones activadas/desactivadas
-// - Volumen de sonido
-// - Vibraci�n activada/desactivada
+// Contacto preferido para llamadas de emergencia
+final ValueNotifier<Map<String, dynamic>?> preferredContact = 
+  ValueNotifier(null);
+
+// Lista de contactos de emergencia
+final ValueNotifier<List<Map<String, String>>> allContacts = 
+  ValueNotifier([]);
+
+// Permite que la UI se actualice reactivamente cuando cambian
 ```
-#### 2. **Estados Reactivos**
-```dart
-// Uso de ValueNotifier para reactividad
-// - Cambio de tema en tiempo real
-// - Actualizaci�n de idioma
-// - Notificaciones
-```
-#### 3. **Configuraci�n de Seguridad**
-```dart
-// - Biometr�a activada
-// - C�digo PIN activado
-// - Sesi�n timeout
-```
-### Dependencias T�cnicas
-| Tecnolog�a | Uso |
-|-----------|-----|
-| **Flutter** | ValueNotifier, ChangeNotifier |
-| **SharedPreferences** | Persistencia de preferencias |
-### Estructura
-```dart
-class Preferences {
- // ValueNotifiers para reactivos
- static final isDarkMode = ValueNotifier<bool>(false);
- static final isNotificationsEnabled = ValueNotifier<bool>(true);
- static final selectedLanguage = ValueNotifier<String>('es');
- // M�todos est�ticos
- static Future<void> loadPreferences()
- static Future<void> savePreferences()
- static void resetToDefaults()
-}
-```
-### Permisos Requeridos
-- Ninguno (solo configuraci�n local)
-### Almacenamiento Usado
-- **SharedPreferences** - Todas las preferencias
----
-## Tabla Comparativa
 
-| Archivo | Ubicaci�n | Tipo | L�neas | Responsabilidad | Firebase | Permisos |
-|---------|-----------|------|--------|-----------------|----------|----------|
-| **main.dart** | `lib/` | StatefulWidget | ~800 | Bot�n p�nico, ubicaci�n | Analytics, DB | 4 |
-| **settings_page.dart** | `lib/screens/` | StatefulWidget | ~250 | Perfil usuario | No | 0 |
-| **options_page.dart** | `lib/screens/` | StatefulWidget | ~1900 | Historial, info m�dica | Database | 2 |
-| **documents_page.dart** | `lib/screens/` | StatefulWidget | ~300 | Documentos m�dicos | Storage | 4 |
-| **symptoms_page.dart** | `lib/screens/` | StatefulWidget | ~400 | S�ntomas | Database | 0 |
-| **preferences.dart** | `lib/utils/` | Singleton | ~150 | Configuraci�n global | No | 0 |
-| **validators.dart** | `lib/utils/validators/` | Funciones | ~500+ | Validaci�n de datos | No | 0 |
+### Uso en la Aplicacion
+
+- **main.dart** - Escucha cambios en preferredContact
+- **settings_page.dart** - Actualiza allContacts cuando se agregan/editan/eliminan
+- **options_page.dart** - Usa preferredContact para contacto principal
 
 ---
-## Tecnolog�as Relacionadas
 
-### Firebase
-- **main.dart** - Analytics, Realtime Database
-- **options_page.dart** - Realtime Database
-- **documents_page.dart** - Cloud Storage
-- **symptoms_page.dart** - Realtime Database
+## Resumen
 
-### Flutter
-- Todos los archivos usan widgets Flutter
-- Material Design para interfaz
-- ValueNotifier para estados reactivos
+| Archivo | Proposito | Estado |
+|---------|-----------|--------|
+| main.dart | Pantalla principal y boton panico | Completo |
+| settings_page.dart | Perfil y contactos | Completo |
+| options_page.dart | Informacion medica avanzada | Completo |
+| documents_page.dart | Documentos medicos | Completo |
+| symptoms_page.dart | Registro de sintomas | Completo |
+| tutorial_screen.dart | Tutorial de bienvenida | Completo |
+| preferences.dart | Estado global | Completo |
 
-### Android
-- **main.dart** - Permisos de ubicaci�n, llamadas
-- **options_page.dart** - Almacenamiento externo
-- **documents_page.dart** - C�mara, almacenamiento
-
-### iOS
-- Similares a Android pero con Keychain en lugar de KeyStore
-- Restricciones de privacidad m�s estrictas
-
-### Dependencias Externas
-- `geolocator` - Ubicaci�n GPS
-- `geocoding` - Conversi�n de coordenadas
-- `url_launcher` - Llamadas telef�nicas
-- `shared_preferences` - Almacenamiento local
-- `flutter_secure_storage` - Encriptaci�n
 ---
-## Pr�ximos Pasos
-1. **Para entender validadores:** Ver archivo `02_VALIDADORES.md`
-2. **Para entender servicios:** Ver archivo `04_ARCHIVOS_SERVICIOS.md`
-3. **Para entender permisos:** Ver archivo `05_PERMISOS_REQUERIDOS.md`
-4. **Para ver ejemplos de c�digo:** Consultar `lib/EJEMPLOS_FASE_1.dart`
----
-## Resumen de Contactos
-- **Para preguntas sobre UI:** Ver c�digo de cada archivo
-- **Para integraci�n Firebase:** Ver `FirebaseService` en servicios
-- **Para validaci�n de datos:** Ver m�dulo Validators
----
-**�ltima actualizaci�n:** 21 de julio de 2026  
-**Versi�n:** 1.4.60  
-**Estado:** Desarrollo
 
+**Nota:** Para cambios recientes y actualizaciones, consultar el archivo de PLAN_PRODUCCION.md

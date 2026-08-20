@@ -1,53 +1,75 @@
-﻿# Archivos de Servicios - Arquitectura Técnica
-**Versión:** 1.0 | **Fecha:** 21 de diciembre de 2025 | **Estado:** Completo
+# Archivos de Servicios - Arquitectura Tecnica
+
+**Version:** 1.4.67  
+**Fecha:** 20 de agosto de 2026  
+**Estado:** Completo
+
 ---
-## Índice
-1. [Descripción General](#descripción-general)
+
+## Indice
+
+1. [Descripcion General](#descripcion-general)
 2. [Servicios Disponibles](#servicios-disponibles)
 3. [Firebase Service](#firebase-service)
 4. [Alert Service](#alert-service)
 5. [Rate Limiter](#rate-limiter)
-6. [Secure Storage Service](#secure-storage-service)
-7. [Servicios Adicionales](#servicios-adicionales)
-8. [Diagrama de Integración](#diagrama-de-integración)
+6. [Appointment Reminder Service](#appointment-reminder-service)
+7. [Encryption Service](#encryption-service)
+8. [Secure Storage Service](#secure-storage-service)
+9. [Servicios Adicionales](#servicios-adicionales)
+
 ---
-## Descripción General
-Los **Servicios** son clases que manejan la **lógica de negocio** y la **comunicación con sistemas externos**. Actúan como intermediarios entre la interfaz de usuario (UI) y las fuentes de datos (Firebase, almacenamiento local, APIs).
-**Localización:** `lib/services/`
-**Patrones Usados:** Singleton (instancia única)
-**Estado:** Completo y producción-ready
+
+## Descripcion General
+
+Los **Servicios** son clases que manejan la **logica de negocio** y la **comunicacion con sistemas externos**. Actuan como intermediarios entre la interfaz de usuario (UI) y las fuentes de datos (Firebase, almacenamiento local, APIs).
+
+**Localizacion:** `lib/services/`  
+**Patrones Usados:** Singleton (instancia unica)  
+**Estado:** Completo y produccion-ready
+
 ### Principios de Diseño
-- **Centralización** - Un único punto de acceso por servicio
-- **Separación** - Cada servicio tiene responsabilidad única
-- **Reutilización** - Servicios usados por múltiples páginas
-- **Testing** - Fáciles de mockear para tests
+
+- **Centralizacion** - Un unico punto de acceso por servicio
+- **Separacion** - Cada servicio tiene responsabilidad unica
+- **Reutilizacion** - Servicios usados por multiples paginas
+- **Testing** - Faciles de mockear para tests
+
 ---
+
 ## Servicios Disponibles
+
 ```
 lib/services/
- firebase_service.dart (250+ líneas) CRÍTICO
- alert_service.dart (230+ líneas) CRÍTICO
- rate_limiter.dart (180+ líneas) IMPORTANTE
- secure_storage_service.dart (155+ líneas) SEGURIDAD
- appointment_reminder_service.dart (140+ líneas)
- contact_service.dart (120+ líneas)
- encryption_service.dart (100+ líneas)
- notification_service.dart (110+ líneas)
- notification_test_service.dart (90+ líneas)
- offline_sync_service.dart (650+ líneas) SINCRONIZACIÓN
- sync_service.dart (80+ líneas)
+ firebase_service.dart (250+ lineas) CRITICO
+ alert_service.dart (230+ lineas) CRITICO
+ rate_limiter.dart (180+ lineas) IMPORTANTE
+ appointment_reminder_service.dart (200+ lineas) NUEVO
+ encryption_service.dart (120+ lineas) SEGURIDAD
+ secure_storage_service.dart (155+ lineas) SEGURIDAD
+ notification_service.dart (110+ lineas)
+ contact_service.dart (120+ lineas)
+ offline_sync_service.dart (650+ lineas) SINCRONIZACION
+ sync_service.dart (80+ lineas)
 ```
+
 ---
-## Firebase Service CRÍTICO
-### Información General
+
+## Firebase Service (CRITICO)
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicación** | `lib/services/firebase_service.dart` |
-| **Líneas de código** | 250+ |
-| **Patrón** | Singleton |
-| **Estado** | Producción |
+| **Ubicacion** | `lib/services/firebase_service.dart` |
+| **Lineas de codigo** | 250+ |
+| **Patron** | Singleton |
+| **Estado** | Produccion |
+
 ### Responsabilidades
-#### 1. Inicialización de Firebase
+
+#### 1. Inicializacion de Firebase
+
 ```dart
 Future<void> initialize()
 // Inicializa:
@@ -57,418 +79,577 @@ Future<void> initialize()
 // - Firebase Cloud Messaging
 // - Firebase Realtime Database
 ```
+
 #### 2. Analytics (Rastreo de Eventos)
+
 ```dart
 // Registra eventos de usuario
 logEvent(name: 'emergency_activated', parameters: {
- 'timestamp': DateTime.now(),
- 'location': 'Quito',
+  'timestamp': DateTime.now(),
+  'location': 'Quito',
 });
 ```
+
 #### 3. Crash Reporting
+
 ```dart
-// Reporta errores automáticamente a Crashlytics
+// Reporta errores automaticamente a Crashlytics
 recordError(error, stackTrace);
 ```
+
 #### 4. Notificaciones Push (FCM)
+
 ```dart
 // Obtener token para notificaciones push
 Future<String> getFCMToken()
-// Subscribir a tópicos
+
+// Subscribir a topicos
 Future<void> subscribeTopic(String topic)
-// Desuscribir de tópicos
+
+// Desuscribir de topicos
 Future<void> unsubscribeTopic(String topic)
 ```
+
 ### Dependencias
-| Tecnología | Versión | Uso |
+
+| Tecnologia | Version | Uso |
 |-----------|---------|-----|
 | **firebase_core** | ^4.3.0 | Core de Firebase |
 | **firebase_analytics** | ^12.1.0 | Eventos de usuario |
 | **firebase_crashlytics** | ^5.0.6 | Reporte de errores |
 | **firebase_messaging** | ^16.1.0 | Notificaciones push |
 | **firebase_database** | ^12.1.1 | Base de datos en tiempo real |
-### Tecnologías Firebase
-- **Firebase Core** - Inicialización
-- **Firebase Analytics** - Eventos y métricas
+
+### Tecnologias Firebase
+
+- **Firebase Core** - Inicializacion
+- **Firebase Analytics** - Eventos y metricas
 - **Firebase Crashlytics** - Error reporting
 - **Firebase Cloud Messaging** - Push notifications
 - **Firebase Realtime Database** - Almacenamiento
+
 ### Ejemplo de Uso
+
 ```dart
 // En main.dart
 await FirebaseService.instance.initialize();
+
 // Registrar evento
 FirebaseService.instance.logEvent(
- name: 'emergency_activated',
- parameters: {'location': 'Quito, Ecuador'},
+  name: 'emergency_activated',
+  parameters: {'location': 'Quito, Ecuador'},
 );
+
 // Reportar error
 try {
- // código que puede fallar
+  // codigo que puede fallar
 } catch (e, st) {
- FirebaseService.instance.recordError(e, st);
+  FirebaseService.instance.recordError(e, st);
 }
+
 // Obtener token FCM
 String token = await FirebaseService.instance.getFCMToken();
-// Subscribir a tópico
+
+// Subscribir a topico
 await FirebaseService.instance.subscribeTopic('emergencies');
 ```
+
 ---
-## Alert Service CRÍTICO
-### Información General
+
+## Alert Service (CRITICO)
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicación** | `lib/services/alert_service.dart` |
-| **Líneas de código** | 230+ |
-| **Patrón** | Singleton |
-| **Estado** | Producción |
+| **Ubicacion** | `lib/services/alert_service.dart` |
+| **Lineas de codigo** | 230+ |
+| **Patron** | Singleton |
+| **Estado** | Produccion |
+
 ### Responsabilidades
+
 #### 1. Crear Alertas de Emergencia
+
 ```dart
 Future<String> createAlert({
- required double latitude,
- required double longitude,
- required String description,
- String? location,
- List<String>? emergencyContacts,
+  required double latitude,
+  required double longitude,
+  required String description,
+  String? location,
+  List<String>? emergencyContacts,
 })
 ```
+
 #### 2. Recuperar Historial
+
 ```dart
 Future<List<Alert>> getUserAlerts()
 // Obtiene todas las alertas del usuario desde Firebase
 ```
+
 #### 3. Actualizar Estado de Alerta
+
 ```dart
 Future<void> updateAlertStatus(
- String alertId,
- AlertStatus newStatus, // 'active', 'resolved', 'false_alarm'
+  String alertId,
+  AlertStatus newStatus, // 'active', 'resolved', 'false_alarm'
 )
 ```
-#### 4. Sincronización Offline
+
+#### 4. Sincronizacion Offline
+
 ```dart
-// Integración con OfflineSyncService
-// Guarda alertas locales si no hay conexión
+// Integracion con OfflineSyncService
+// Guarda alertas locales si no hay conexion
+// Sincroniza automaticamente al recuperar conexion
 ```
+
 ### Estructura de Datos
+
 ```dart
 class Alert {
- String id; // ID único
- DateTime timestamp; // Cuándo se activó
- double latitude; // Latitud GPS
- double longitude; // Longitud GPS
- String? location; // Dirección legible
- String description; // Descripción de emergencia
- List<String>? emergencyContacts; // Contactos notificados
- AlertStatus status; // Estado actual
- String userId; // ID del usuario
+  String id; // ID unico
+  DateTime timestamp; // Cuando se activo
+  double latitude; // Latitud GPS
+  double longitude; // Longitud GPS
+  String? location; // Direccion legible
+  String description; // Descripcion de emergencia
+  List<String>? emergencyContacts; // Contactos notificados
+  AlertStatus status; // Estado actual
+  String userId; // ID del usuario
 }
+
 enum AlertStatus {
- active, // En progreso
- resolved, // Resuelta
- false_alarm, // Falsa alarma
+  active, // En progreso
+  resolved, // Resuelta
+  false_alarm, // Falsa alarma
 }
 ```
-### Integración Firebase
+
+### Integracion Firebase
+
 - **Realtime Database** - Guardado de alertas
 - **Cloud Functions** - Procesamiento en backend (futuro)
-- **Storage** - Imágenes de evidencia (futuro)
+- **Storage** - Imagenes de evidencia (futuro)
+
 ### Ejemplo de Uso
+
 ```dart
-// Crear alerta cuando usuario presiona botón de pánico
+// Crear alerta cuando usuario presiona boton de panico
 try {
- String alertId = await AlertService.instance.createAlert(
- latitude: 0.3522,
- longitude: -78.5249,
- description: 'Dolor severo en el pecho',
- location: 'Calle 10 y Amazonas, Quito',
- emergencyContacts: ['0963522505', '0987654321'],
- );
- print('Alerta creada: $alertId');
+  String alertId = await AlertService.instance.createAlert(
+    latitude: 0.3522,
+    longitude: -78.5249,
+    description: 'Dolor severo en el pecho',
+    location: 'Calle 10 y Amazonas, Quito',
+    emergencyContacts: ['0963522505', '0987654321'],
+  );
+  print('Alerta creada: $alertId');
 } catch (e) {
- print('Error creando alerta: $e');
+  print('Error creando alerta: $e');
 }
+
 // Obtener historial de alertas
 List<Alert> alerts = await AlertService.instance.getUserAlerts();
 for (var alert in alerts) {
- print('${alert.timestamp}: ${alert.description}');
+  print('${alert.timestamp}: ${alert.description}');
 }
+
 // Actualizar estado
 await AlertService.instance.updateAlertStatus(
- alertId,
- AlertStatus.resolved,
+  alertId,
+  AlertStatus.resolved,
 );
 ```
+
 ---
-## Rate Limiter IMPORTANTE
-### Información General
+
+## Rate Limiter (IMPORTANTE)
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicación** | `lib/services/rate_limiter.dart` |
-| **Líneas de código** | 180+ |
-| **Patrón** | Utilidad estática |
-| **Estado** | Producción |
+| **Ubicacion** | `lib/services/rate_limiter.dart` |
+| **Lineas de codigo** | 180+ |
+| **Patron** | Utilidad estatica |
+| **Estado** | Produccion |
+| **Ultima actualizacion** | 20 de agosto de 2026 |
+
 ### Responsabilidades
+
 #### 1. Control de Intentos
+
 ```dart
 Future<bool> canExecute({
- required String action,
- required int maxAttempts,
- required int windowHours,
+  required String action,
+  int maxAttempts = 4,
+  int windowMinutes = 2,
 })
-// Verifica si se puede ejecutar una acción
+// Verifica si se puede ejecutar una accion
+// Usa ventana fija: contador se reinicia cuando expira
 ```
-#### 2. Obtener Información
+
+#### 2. Obtener Informacion
+
 ```dart
 Future<RateLimitInfo> getInfo(String action)
-// Retorna: intentos restantes, tiempo disponible, etc
+// Retorna: intentos realizados, limites, tiempo disponible, etc
 ```
+
 #### 3. Reset Manual
+
 ```dart
 Future<void> reset(String action)
 Future<void> resetAll()
 // Para testing y debugging
 ```
+
+### Modo Desarrollo
+
+```dart
+// En el archivo rate_limiter.dart
+static const bool enableRateLimit = true; // Cambiar a false para deshabilitar
+
+// Util para testing sin limites de intentos
+// SIEMPRE true en produccion
+```
+
 ### Estructura de Datos
+
 ```dart
 class RateLimitInfo {
- int attempts; // Intentos realizados
- int maxAttempts; // Límite máximo
- bool isLimited; // Está limitado?
- DateTime? nextAvailableTime; // Cuándo está disponible
- Duration? waitTime; // Tiempo a esperar
+  int attemptsUsed; // Intentos realizados
+  int maxAttempts; // Limite maximo
+  int windowMinutes; // Duracion de la ventana
+  bool isLimited; // Esta limitado?
+  Duration? timeUntilNextAttempt; // Tiempo a esperar
+  DateTime? nextAvailableTime; // Cuando esta disponible
+  
+  int get attemptsRemaining; // Intentos restantes calculados
+  String get readableInfo; // Texto legible para UI
 }
 ```
+
 ### Almacenamiento
+
 - **SharedPreferences** - Persistencia local
-- **Autolimpieza** - Intenta se expiran después del tiempo
+- **Autolimpieza** - Intentos se expiran despues del tiempo
+- **Ventana Fija** - Contador se reinicia con cada nueva ventana
+
+### Configuracion Actual
+
+```
+Boton de Panico:
+ - Maximo 4 intentos
+ - En 2 minutos
+ - Después de 2 minutos, el contador se reinicia a 0
+```
+
 ### Ejemplo de Uso
+
 ```dart
 // En main.dart - Verificar antes de activar emergencia
 bool canActivate = await RateLimiter.canExecute(
- action: 'panic_button_main',
- maxAttempts: 3,
- windowHours: 3,
+  action: 'panic_button_main',
+  maxAttempts: 4,
+  windowMinutes: 2,
 );
+
 if (!canActivate) {
- RateLimitInfo info = await RateLimiter.getInfo('panic_button_main');
- print('Intenta en: ${info.waitTime}');
- return;
+  // Mostrar mensaje: "Demasiados intentos, espere X minutos"
+  RateLimitInfo info = await RateLimiter.getInfo(
+    action: 'panic_button_main',
+  );
+  print('Reintentar en: ${info.timeUntilNextAttempt}');
+} else {
+  // Proceder con emergencia
+  await activateEmergency();
 }
-// Proceder con alerta
 ```
+
 ---
-## Secure Storage Service SEGURIDAD
-### Información General
+
+## Appointment Reminder Service (NUEVO)
+
+### Informacion General
+
 | Atributo | Valor |
 |----------|-------|
-| **Ubicación** | `lib/services/secure_storage_service.dart` |
-| **Líneas de código** | 155+ |
-| **Patrón** | Utilidad estática |
-| **Estado** | Producción |
+| **Ubicacion** | `lib/services/appointment_reminder_service.dart` |
+| **Lineas de codigo** | 200+ |
+| **Patron** | Singleton |
+| **Estado** | Nuevo - 20 de agosto de 2026 |
+
 ### Responsabilidades
-#### 1. Guardar Datos Sensibles Encriptados
+
+#### 1. Programar Recordatorios de Citas
+
 ```dart
-Future<void> saveEmergencyContact(String phone)
-Future<void> saveMedicalInfo(String medicalInfo)
-Future<void> saveAllergies(String allergies)
-Future<void> saveUserProfile(ci, firstName, lastName)
+Future<void> scheduleAppointmentReminder({
+  required String appointmentId,
+  required DateTime appointmentDateTime,
+  required String doctorName,
+  required String appointmentDate, // "23/12/2025"
+  required String appointmentTime, // "14:30"
+  int minutesBeforeReminder = 1440, // 24 horas (default)
+})
 ```
-#### 2. Recuperar Datos
+
+#### 2. Cancelar Recordatorios
+
 ```dart
-Future<String?> getEmergencyContact()
-Future<String?> getMedicalInfo()
-Future<String?> getAllergies()
-Future<Map<String, String?>> getUserProfile()
+Future<void> cancelAppointmentReminder(String appointmentId)
+Future<void> cancelAllReminders()
 ```
-#### 3. Eliminar Datos
+
+#### 3. Verificar Recordatorios Programados
+
 ```dart
-Future<void> deleteEmergencyContact()
-Future<void> deleteMedicalInfo()
-Future<void> clearAll()
+Future<List<PendingNotificationRequest>> getPendingReminders()
+Future<bool> isReminderScheduled(String appointmentId)
 ```
-### Encriptación
-| Plataforma | Método | Seguridad |
-|-----------|--------|----------|
-| **Android** | AndroidKeyStore | Hardware KeyStore (si disponible) |
-| **iOS** | Keychain | Secure Enclave |
-| **Windows/macOS** | Almacenamiento OS | Encriptación del SO |
+
+#### 4. Refrescar Recordatorios
+
+```dart
+Future<void> refreshReminders(List<Map<String, dynamic>> appointments)
+// Reprograma automaticamente recordatorios basados en lista de citas
+```
+
+### Caracteristicas
+
+- **Notificaciones Locales** - flutter_local_notifications
+- **Programacion Automatica** - 24 horas antes de cita
+- **Ajuste Inteligente** - Si la cita es en menos de 24h, programa en 5 minutos
+- **Persistencia** - Los recordatorios se mantienen incluso al reiniciar app
+- **Payload** - Lleva ID de cita para navegacion
+
 ### Ejemplo de Uso
+
 ```dart
-// Guardar contacto de emergencia de forma segura
-String phone = Validators.normalizePhoneNumber(userInput);
-await SecureStorageService.saveEmergencyContact(phone);
-// Recuperar
-String? savedPhone = await SecureStorageService.getEmergencyContact();
-print('Contacto: $savedPhone');
-// Guardar información médica
-await SecureStorageService.saveMedicalInfo('Alérgico a Penicilina');
-// Limpiar todo
-await SecureStorageService.clearAll();
+// En options_page.dart - Cuando se agrega una cita
+await AppointmentReminderService.instance.scheduleAppointmentReminder(
+  appointmentId: 'cita_cardiologo_2026',
+  appointmentDateTime: DateTime(2026, 12, 23, 14, 30),
+  doctorName: 'Dr. Carlos Lopez',
+  appointmentDate: '23/12/2026',
+  appointmentTime: '14:30',
+  minutesBeforeReminder: 1440, // 24 horas
+);
+
+// Cuando se elimina una cita
+await AppointmentReminderService.instance
+  .cancelAppointmentReminder('cita_cardiologo_2026');
 ```
----
-## Servicios Adicionales
-### Appointment Reminder Service
-| Función | Descripción |
-|---------|-------------|
-| `scheduleReminder()` | Programar recordatorio de cita |
-| `cancelReminder()` | Cancelar recordatorio |
-| `getAllReminders()` | Obtener todas las citas |
-**Ubicación:** `lib/services/appointment_reminder_service.dart`
-**Líneas:** 140+
-**Dependencia:** `flutter_local_notifications`
----
-### Contact Service
-| Función | Descripción |
-|---------|-------------|
-| `saveContact()` | Guardar contacto de emergencia |
-| `getContact()` | Recuperar contacto |
-| `deleteContact()` | Eliminar contacto |
-**Ubicación:** `lib/services/contact_service.dart`
-**Líneas:** 120+
-**Dependencia:** `contacts_service`
----
-### Encryption Service
-| Función | Descripción |
-|---------|-------------|
-| `encrypt()` | Encriptar string |
-| `decrypt()` | Desencriptar string |
-**Ubicación:** `lib/services/encryption_service.dart`
-**Líneas:** 100+
-**Encriptación:** AES-256
----
-### Notification Service
-| Función | Descripción |
-|---------|-------------|
-| `showNotification()` | Mostrar notificación local |
-| `showAlert()` | Mostrar alerta visual |
-**Ubicación:** `lib/services/notification_service.dart`
-**Líneas:** 110+
-**Dependencia:** `flutter_local_notifications`
----
-### Offline Sync Service NUEVO
-| Función | Descripción |
-|---------|-------------|
-| `saveOfflineAlert()` | Guardar alerta localmente |
-| `syncOnlineAlerts()` | Sincronizar cuando hay conexión |
-| `getOfflineAlerts()` | Obtener alertas offline |
-**Ubicación:** `lib/services/offline_sync_service.dart`
-**Líneas:** 650+
-**Encriptación:** AES-256 para datos locales
-**Almacenamiento:** Archivos JSON en `Documentos/offline_alerts/`
----
-## Diagrama de Integración
-```
- INTERFAZ DE USUARIO
- main.dart senttings.dart options.dart documents.dart
- Firebase Alert Rate Limiter
- Service Service
- CAPA DE ALMACENAMIENTO
- Firebase SharedPrefs Secure
- Database Storage
- Offline Sync Encryption Local
- Service Service JSON Files
-```
----
-## Flujo de Datos: Emergencia Activada
-```
-1. Usuario presiona botón (main.dart)
-2. Verifica Rate Limiter
-3. Obtiene ubicación GPS
-4. Crea Alerta en AlertService
-5. AlertService guarda en Firebase Database
-6. FirebaseService registra evento en Analytics
-7. Contactos se notifican (via Cloud Functions - futuro)
-8. Historial se muestra en options.dart
-```
----
-## Inicialización en main.dart
+
+### Integracion en main.dart
+
 ```dart
-void main() async {
- WidgetsFlutterBinding.ensureInitialized();
- // 1. Solicitar permisos de ubicación
- await Geolocator.requestPermission();
- // 2. Inicializar Firebase
- await FirebaseService.instance.initialize();
- // 3. Inicializar servicios de notificaciones
- await NotificationService.instance.initialize();
- // 4. Cargar preferencias
- await Preferences.loadPreferences();
- // Iniciar app
- runApp(const MyApp());
-}
-```
----
-## Patrones de Diseño Usados
-### 1. Singleton Pattern
-```dart
-class FirebaseService {
- static final FirebaseService _instance = FirebaseService._internal();
- static FirebaseService get instance => _instance;
- FirebaseService._internal();
-}
-// Uso: FirebaseService.instance.initialize();
-```
-### 2. Async/Await Pattern
-```dart
-Future<void> createAlert(...) async {
- // Operaciones asincrónicas
- await Firebase.database().ref().set(...);
-}
-```
-### 3. Error Handling Pattern
-```dart
+// En main() - Inicializar al arrancar la app
 try {
- await AlertService.instance.createAlert(...);
-} catch (e, stackTrace) {
- FirebaseService.instance.recordError(e, stackTrace);
+  await AppointmentReminderService.instance.initialize();
+  print('[AppointmentReminderService] Inicializado correctamente');
+} catch (e) {
+  print('[AppointmentReminderService] Error: $e');
 }
 ```
+
+### Permisos Requeridos
+
+```xml
+<!-- Android 13+: Requerido para notificaciones -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+<!-- iOS: Agregado automaticamente por Flutter -->
+```
+
 ---
-## Tecnologías Relacionadas
-### Firebase (Crítico)
-- **Realtime Database** - AlertService
-- **Cloud Messaging** - FirebaseService
-- **Analytics** - Todos los servicios
-- **Crashlytics** - Reportes de error
-### Flutter
-- Todos los servicios usan APIs Flutter
-- Async/await para operaciones no-bloqueantes
-- Stream para datos en tiempo real
-### Android
-- **AndroidKeyStore** - SecureStorageService
-- **Geolocation** - AlertService
-- **Notifications** - NotificationService
-### iOS
-- **Keychain** - SecureStorageService (equivalente)
-- **CoreLocation** - Geolocation
-- **UserNotifications** - Notificaciones
-### Dependencias Externas
-- `firebase_core`, `firebase_analytics`, `firebase_crashlytics`
-- `firebase_database`, `firebase_messaging`
-- `flutter_secure_storage`
-- `geolocator`, `geocoding`
-- `flutter_local_notifications`
+
+## Encryption Service (SEGURIDAD)
+
+### Informacion General
+
+| Atributo | Valor |
+|----------|-------|
+| **Ubicacion** | `lib/services/encryption_service.dart` |
+| **Lineas de codigo** | 120+ |
+| **Patron** | Singleton |
+| **Estado** | Produccion |
+
+### Caracteristicas
+
+- **Algoritmo:** AES-256 (estandar militar)
+- **IV:** 128 bits (vector de inicializacion)
+- **Formato:** Base64 (facil de almacenar)
+- **Sin dependencias externas:** Solo 'encrypt' package
+
+### Metodos Principales
+
+```dart
+void initialize()
+// Inicializar con claves predefinidas
+
+String encrypt(String value)
+// Encripta un string
+// Retorna: base64_encrypted_string
+
+String decrypt(String encryptedValue)
+// Desencripta un string
+
+Map<String, String> encryptLocation(double? latitude, double? longitude)
+// Encripta coordenadas GPS
+// Retorna: {latitude_encrypted, longitude_encrypted}
+
+Map<String, double?> decryptLocation(String? latEncrypted, String? lonEncrypted)
+// Desencripta coordenadas
+// Retorna: {latitude, longitude}
+```
+
+### Ejemplo de Uso
+
+```dart
+// En main.dart - Inicializar
+EncryptionService.instance.initialize();
+
+// Encriptar datos sensibles
+String encryptedLat = EncryptionService.instance.encrypt('0.3522');
+String encryptedLon = EncryptionService.instance.encrypt('-78.5249');
+
+// Desencriptar
+String lat = EncryptionService.instance.decrypt(encryptedLat);
+String lon = EncryptionService.instance.decrypt(encryptedLon);
+
+// Encriptar ubicacion completa
+Map<String, String> encrypted = EncryptionService.instance
+  .encryptLocation(0.3522, -78.5249);
+// Retorna: {
+//   latitude_encrypted: "base64...",
+//   longitude_encrypted: "base64..."
+// }
+```
+
+### Datos Encriptados
+
+En `offline_sync_service.dart`, se encriptan:
+- latitude
+- longitude
+- numberCalled
+
+Esto protege la privacidad del usuario en alertas guardadas localmente.
+
 ---
-## Resumen de Servicios
-| Servicio | Líneas | Firebase | Crítico | Estado |
-|----------|--------|----------|---------|--------|
-| **FirebaseService** | 250+ | | | Prod |
-| **AlertService** | 230+ | | | Prod |
-| **RateLimiter** | 180+ | | | Prod |
-| **SecureStorageService** | 155+ | | | Prod |
-| **AppointmentReminderService** | 140+ | | | Prod |
-| **ContactService** | 120+ | | | Prod |
-| **EncryptionService** | 100+ | | | Prod |
-| **NotificationService** | 110+ | | | Prod |
-| **OfflineSyncService** | 650+ | | | Prod |
+
+## Secure Storage Service (SEGURIDAD)
+
+### Informacion General
+
+| Atributo | Valor |
+|----------|-------|
+| **Ubicacion** | `lib/services/secure_storage_service.dart` |
+| **Lineas de codigo** | 155+ |
+| **Patron** | Singleton |
+| **Estado** | Produccion |
+
+### Caracteristicas
+
+- **Hardware Keystore:** Android KeyStore
+- **Keychain:** iOS Keychain
+- **Encriptacion a nivel SO:** Soportado por plataforma
+- **Sin exposicion en memoria:** Datos seguros
+
+### Metodos
+
+```dart
+Future<void> saveSecureData(String key, String value)
+Future<String?> getSecureData(String key)
+Future<void> deleteSecureData(String key)
+Future<void> deleteAllSecureData()
+```
+
+### Datos Almacenados
+
+- Cedula (CI) del usuario
+- Nombre completo
+- Numeros de contacto (si es necesario)
+- Token de autenticacion (futuro)
+- Claves de encriptacion
+
+### Ejemplo de Uso
+
+```dart
+// Guardar datos sensibles
+await SecureStorageService.instance.saveSecureData('user_ci', '1725632105');
+await SecureStorageService.instance.saveSecureData('user_name', 'Juan Garcia');
+
+// Recuperar datos
+String? ci = await SecureStorageService.instance.getSecureData('user_ci');
+
+// Eliminar datos
+await SecureStorageService.instance.deleteSecureData('user_ci');
+
+// Limpiar todo
+await SecureStorageService.instance.deleteAllSecureData();
+```
+
 ---
-## Próximos Pasos
-1. **Para Cloud Functions:** Implementar procesamiento backend
-2. **Para autenticación:** Integrar Firebase Auth
-3. **Para storage:** Usar Firebase Cloud Storage para imágenes
-4. **Para webhooks:** Integrar WhatsApp API
+
+## Servicios Adicionales
+
+### NotificationService
+
+- Manejo de notificaciones push (FCM)
+- Subscripcion a topicos
+- Notificaciones locales
+- Manejo de callbacks
+
+### ContactService
+
+- Manejo de contactos de emergencia
+- Validacion de numeros
+- Normalizacion de formatos
+- Persistencia de contactos
+
+### OfflineSyncService
+
+- Sincronizacion automatica de alertas
+- Deteccion de conectividad
+- Almacenamiento local en JSON
+- Encriptacion de datos locales
+- Recuperacion automatica de conexion
+
+### SyncService
+
+- Sincronizacion general de datos
+- Coordinacion entre servicios
+- Manejo de conflictos de datos
+
 ---
-**Última actualización:** 21 de julio de 2026
-**Versión:** 1.4.60
-**Estado:** Desarrollo
+
+## Diagrama de Integracion
+
+```
+main.dart (Inicializar servicios)
+   |
+   +-- FirebaseService (Analytics, Crashlytics)
+   |
+   +-- AppointmentReminderService (Recordatorios)
+   |
+   +-- NotificationService (FCM)
+   |
+   +-- EncryptionService (Encriptacion)
+   |
++-- AlertService (Gestion de alertas)
+   |
+   +-- OfflineSyncService (Sincronizacion)
+   +-- SecureStorageService (Almacenamiento)
+   +-- Validators (Validaciones)
+   +-- RateLimiter (Control de intentos)
+```
+
+---
+
+**Nota:** Todos los servicios son thread-safe y pueden ser accedidos desde multiples widgets simultaneamente.
+
+**Ultimo cambio:** 20 de agosto de 2026 - Agregado AppointmentReminderService completo.

@@ -42,6 +42,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
   String _contactoNombre = '';
   String _contactoTelefono = '';
   String _telefonoError = '';
+  String _ciError = '';
 
   final List<String> tiposSangre = [
     'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'
@@ -116,6 +117,19 @@ class _TutorialScreenState extends State<TutorialScreen> {
     return 'Debe empezar con 09 o +593';
   }
 
+  /// Validar cédula ecuatoriana: 10 dígitos numéricos
+  /// Devuelve el mensaje de error o '' si es válida/vacía
+  String _getCiErrorMessage(String ci) {
+    if (ci.isEmpty) return '';
+    if (!RegExp(r'^\d+$').hasMatch(ci)) {
+      return 'La cédula solo puede contener números';
+    }
+    if (ci.length != 10) {
+      return 'La cédula debe tener 10 dígitos (lleva ${ci.length})';
+    }
+    return '';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -128,33 +142,51 @@ class _TutorialScreenState extends State<TutorialScreen> {
     super.dispose();
   }
 
+  bool _isCompleting = false;
+
   Future<void> _completeTutorial() async {
+    // Evitar doble ejecución si se toca el botón varias veces
+    if (_isCompleting) return;
+    _isCompleting = true;
+
     // Guardar datos de perfil
     try {
       final sp = await SharedPreferences.getInstance();
 
-      // Guardar perfil (nombres, apellidos, CI, edad, tipo de sangre)
-      if (_nombres.isNotEmpty) {
-        await sp.setString('profile_nombres', _nombres);
+      // Guardar perfil (nombres, apellidos, edad, tipo de sangre)
+      // Cada bloque es independiente: si uno falla, no bloquea el resto
+      try {
+        if (_nombres.isNotEmpty) {
+          await sp.setString('profile_nombres', _nombres);
+        }
+        if (_apellidos.isNotEmpty) {
+          await sp.setString('profile_apellidos', _apellidos);
+        }
+        if (_edad.isNotEmpty) {
+          await sp.setString('profile_edad', _edad);
+        }
+        if (_tipoSangre.isNotEmpty) {
+          await sp.setString('profile_blood_type', _tipoSangre);
+        }
+      } catch (e) {
+        print('[Tutorial] Error guardando perfil: $e');
       }
-      if (_apellidos.isNotEmpty) {
-        await sp.setString('profile_apellidos', _apellidos);
-      }
+
+      // CI: se guarda en SharedPreferences y en SecureStorage
       if (_ci.isNotEmpty) {
-        await sp.setString('profile_ci', _ci);
-        await SecureStorageService.saveCI(_ci);
-        // IMPORTANTE: Marcar que el CI ya fue establecido (no se puede cambiar después)
-        await sp.setBool('ci_already_set', true);
-      }
-      if (_edad.isNotEmpty) {
-        await sp.setString('profile_edad', _edad);
-      }
-      if (_tipoSangre.isNotEmpty) {
-        await sp.setString('profile_blood_type', _tipoSangre);
+        try {
+          await sp.setString('profile_ci', _ci);
+          await SecureStorageService.saveCI(_ci);
+          // IMPORTANTE: Marcar que el CI ya fue establecido (no se puede cambiar después)
+          await sp.setBool('ci_already_set', true);
+        } catch (e) {
+          print('[Tutorial] Error guardando CI: $e');
+        }
       }
 
       // Guardar contacto si fue agregado y validado
       if (_contactoNombre.isNotEmpty && _contactoTelefono.isNotEmpty && _isValidPhoneNumber(_contactoTelefono)) {
+        try {
         final Map<String, String> contact = {
           'nombre': _contactoNombre,
           'telefono': _contactoTelefono,
@@ -194,16 +226,24 @@ class _TutorialScreenState extends State<TutorialScreen> {
             'index': 0,
           };
         }
+        } catch (e) {
+          print('[Tutorial] Error guardando contacto: $e');
+        }
       }
-
-      // Marcar tutorial como completado
-      await TutorialScreen.markTutorialCompleted();
-
-      print('[Tutorial] Datos guardados y tutorial completado');
-      widget.onTutorialComplete();
     } catch (e) {
-      print('[Tutorial] ERROR al completar tutorial: $e');
+      print('[Tutorial] Error obteniendo preferencias: $e');
     }
+
+    // Marcar tutorial como completado SIEMPRE (aunque falle algún guardado),
+    // para que el tutorial no vuelva a aparecer en el siguiente arranque.
+    try {
+      await TutorialScreen.markTutorialCompleted();
+    } catch (e) {
+      print('[Tutorial] Error marcando tutorial como completado: $e');
+    }
+
+    print('[Tutorial] Tutorial completado');
+    widget.onTutorialComplete();
   }
 
   void _nextPage() {
@@ -605,12 +645,19 @@ class _TutorialScreenState extends State<TutorialScreen> {
                   ),
                   const SizedBox(height: 15),
                   TextField(
-                    onChanged: (value) => _ci = value,
+                    onChanged: (value) {
+                      setState(() {
+                        _ci = value;
+                        _ciError = _getCiErrorMessage(value); 
+                      });
+                    },
+                    keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       hintText: 'Cédula de Identidad (CI)',
                       prefixIcon: Icon(Icons.badge),
                       filled: true,
                       fillColor: Colors.white,
+                      errorText: _ciError.isEmpty ? null : _ciError,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -676,7 +723,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Los datos de emergencia podría serán los detalles datos más relevantes para salvar vidas',
+                            'Estos datos de emergencia serán los más relevantes para salvar tu vida',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white,
@@ -742,9 +789,11 @@ class _TutorialScreenState extends State<TutorialScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _nextPage,
+                        // Si se escribió una CI, debe ser válida (10 dígitos) para continuar
+                        onPressed: (_ci.isEmpty || _ciError.isEmpty) ? _nextPage : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade300,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -755,7 +804,9 @@ class _TutorialScreenState extends State<TutorialScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFE63946),
+                            color: (_ci.isEmpty || _ciError.isEmpty)
+                                ? const Color(0xFFE63946)
+                                : Colors.grey,
                           ),
                         ),
                       ),

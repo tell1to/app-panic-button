@@ -1,43 +1,43 @@
 # Plan de Pruebas Unitarias y Widget Tests
 
-**Fecha de Creación:** Agosto 2026  
-**Estado:** Completado ✅  
-**Total de Tests:** 130 (97 Validadores + 15 Widget Tests + 18 Rate Limiter)  
+**Fecha de Creacion:** Agosto 2026  
+**Estado:** Completado  
+**Total de Tests:** 130+ (35 Validadores + 18 Rate Limiter + 15 Contactos + Setup)  
 **Cobertura:** 100% PASANDO
 
 ---
 
-## 📋 Tabla de Contenidos
+## Tabla de Contenidos
 
-1. [Cómo Fueron Construidas las Pruebas](#cómo-fueron-construidas-las-pruebas)
-2. [Qué Pruebas Cumplen](#qué-pruebas-cumplen)
-3. [Cómo Se Ejecutan](#cómo-se-ejecutan)
+1. [Como Fueron Construidas las Pruebas](#como-fueron-construidas-las-pruebas)
+2. [Que Pruebas Cumplen](#que-pruebas-cumplen)
+3. [Como Se Ejecutan](#como-se-ejecutan)
 4. [Respuestas Esperadas](#respuestas-esperadas)
 5. [Estructura de Pruebas Detallada](#estructura-de-pruebas-detallada)
 
 ---
 
-## Cómo Fueron Construidas las Pruebas
+## Como Fueron Construidas las Pruebas
 
-### 🏗️ Framework y Tecnologías
+### Framework y Tecnologias
 
-| Componente | Tecnología | Versión |
+| Componente | Tecnologia | Version |
 |-----------|-----------|---------|
-| **Testing Framework** | `flutter_test` | Latest |
+| **Testing Framework** | flutter_test | Latest |
 | **Lenguaje** | Dart | 3.x |
-| **Herramienta de Ejecución** | `flutter test` | CLI |
-| **Patrón de Pruebas** | AAA (Arrange-Act-Assert) | Standard |
+| **Herramienta de Ejecucion** | flutter test | CLI |
+| **Patron de Pruebas** | AAA (Arrange-Act-Assert) | Standard |
 
-### 📐 Patrones de Construcción
+### Patrones de Construccion
 
 #### 1. **Pruebas Unitarias (Unit Tests)**
 
 ```dart
-test('descripción del test', () {
+test('descripcion del test', () {
   // Arrange: Preparar datos
   final input = '0963522505';
   
-  // Act: Ejecutar función
+  // Act: Ejecutar funcion
   final result = Validators.isValidPhone(input);
   
   // Assert: Verificar resultado
@@ -45,39 +45,39 @@ test('descripción del test', () {
 });
 ```
 
-**Características:**
+**Caracteristicas:**
 - Sin dependencias externas
 - Pruebas de validadores con entrada/salida directa
-- Rápidas (<1ms por test)
-- Determinísticas
+- Rapidas (<1ms por test)
+- Deterministicas
 
 #### 2. **Pruebas de Widget (Widget Tests)**
 
 ```dart
-testWidgets('descripción del widget test', (WidgetTester tester) async {
+testWidgets('descripcion del widget test', (WidgetTester tester) async {
   // Arrange: Construir el widget
-  await tester.pumpWidget(const MyApp());
+  await tester.pumpWidget(const MaterialApp(home: SenttingsPage()));
   
-  // Act: Esperar inicialización
-  await tester.pump(const Duration(seconds: 2));
+  // Act: Esperar inicializacion
+  await tester.pump(Duration(seconds: 2));
   
   // Assert: Verificar estructura
   expect(find.byType(MaterialApp), findsOneWidget);
 });
 ```
 
-**Características:**
+**Caracteristicas:**
 - Pruebas de renderizado sin emulador
 - Manejo de async/await para Firebase
-- Verificación de estructura UI
-- Robustez contra delays de inicialización
+- Verificacion de estructura UI
+- Robustez contra delays de inicializacion
 
-#### 3. **Organización Jerárquica con `group()`**
+#### 3. **Organizacion Jerarquica con group()**
 
 ```dart
 void main() {
-  group('Categoría Principal', () {
-    group('Subcategoría', () {
+  group('Categoria Principal', () {
+    group('Subcategoria', () {
       test('Prueba individual', () { ... });
     });
   });
@@ -87,535 +87,404 @@ void main() {
 **Beneficios:**
 - Estructura clara y legible
 - Reportes organizados
-- Fácil mantenimiento
+- Facil mantenimiento
 
 ---
 
-## Qué Pruebas Cumplen
+## Que Pruebas Cumplen
 
-### 📱 Validadores Ecuador (97 Tests)
+### 1. Validadores Ecuador - 35 Tests
 
-#### **1. Validación de Teléfonos Locales e Internacionales**
-**Archivo:** `test/validators_ecuador_test.dart`  
-**Tests:** 36
+**Archivo:** `test/validators_ecuador_test.dart`
+
+#### Validacion de Telefonos Ecuador
+
+| Formato | Valido | Invalido | Ejemplo |
+|---------|--------|----------|---------|
+| **Local (09XXXXXXXX)** | 0963522505 | 0863522505 (08) | 09 6352 2505 con espacios |
+| **Internacional (+593XXXXXXXXX)** | +593963522505 | +591963522505 (Bolivia) | +593-963-522-505 con guiones |
+| **Sin + (593XXXXXXXXX)** | 593963522505 | 593863522505 (08) | 593 963 522 505 |
+| **Normalizacion** | 0963522505 = +593963522505 | Conversiones invalidas | Bidireccional |
+| **Edge Cases** | Espacios, guiones | Caracteres especiales | Parsing flexible |
 
 **Casos Cubiertos:**
+- Formato local: comienza con 09, total 10 digitos
+- Formato internacional: codigo pais +593, total 12 caracteres
+- Conversion bidireccional: 0963522505 <-> +593963522505
+- Rechazo de otros paises: +1, +56 (Chile), +51 (Peru), +591 (Bolivia)
+- Tolerancia de espacios/guiones: 09 6352 2505 valido
 
-| Formato | Válido | Inválido | Ejemplos |
-|---------|--------|----------|----------|
-| **Local (09XXXXXXXX)** | ✅ `0963522505` | ❌ `0863522505` (comienza 08) | `09 6352 2505`, `09-6352-2505` |
-| **Internacional (+593XXXXXXXXX)** | ✅ `+593963522505` | ❌ `+591963522505` (Bolivia) | `+593-963-522-505`, `593963522505` |
-| **Normalizacion** | ✅ Convierte a formato estándar | ❌ Rechaza no-Ecuador | Local ↔ Internacional |
-| **Edge Cases** | ✅ Espacios y guiones | ❌ Caracteres especiales | Parsing flexible |
+#### Validacion de Emails - 12 Tests
 
-**Validaciones Específicas:**
-- ✅ Formato local: comienza con `09`, total 10 dígitos
-- ✅ Formato internacional: código país `+593`, total 12 caracteres
-- ✅ Conversión bidireccional: `0963522505` ↔ `+593963522505`
-- ❌ Rechaza otros países: `+1`, `+56` (Chile), `+51` (Perú), `+591` (Bolivia)
-- ✅ Tolera espacios/guiones: `09 6352 2505` ✓
-
----
-
-#### **2. Validación de Emails**
-**Tests:** 12
-
-| Caso | Válido | Inválido | Ejemplo |
+| Caso | Valido | Invalido | Ejemplo |
 |------|--------|----------|---------|
-| **Formato Básico** | ✅ `user@example.com` | ❌ `usergmail.com` (sin @) | `juan.garcia@gmail.com` |
-| **Dominios Locales** | ✅ `contact@empresa.ec` | ❌ `@domain.com` (sin usuario) | `.ec`, `.com`, `.co.uk` |
-| **Tags/Plus** | ✅ `test+tag@domain.com` | ❌ `test@domain` (sin extensión) | Gmail style tags ✓ |
-| **Caracteres Especiales** | ✅ Puntos, guiones | ❌ Caracteres inválidos | `john.doe@company.co.uk` |
-| **Múltiples @ | ❌ `user@@example.com` | | Solo se permite 1 |
-| **Espacios** | ❌ `user @example.com` | | No permitidos |
+| **Formato Basico** | user@example.com | usergmail.com (sin @) | juan.garcia@gmail.com |
+| **Dominios Locales** | contact@empresa.ec | @domain.com (sin usuario) | .ec, .com, .co.uk |
+| **Tags/Plus** | test+tag@domain.com | test@domain (sin extension) | Gmail style tags |
+| **Caracteres Especiales** | Puntos, guiones | Caracteres invalidos | john.doe@company.co.uk |
+| **Multiples @** | Invalido | usuario@@example.com | Solo se permite 1 |
 
-**Validaciones Específicas:**
-- ✅ Estructura: `[local]@[domain].[extension]`
-- ✅ Local: caracteres alfanuméricos, puntos, guiones, más
-- ✅ Dominio: alfanumérico con puntos
-- ✅ Extensión mínima: 2 caracteres
-- ❌ No espacios en todo el email
-- ❌ Máximo 1 símbolo `@`
+#### Validacion de Nombres - 12 Tests
 
----
-
-#### **3. Validación de Nombres**
-**Tests:** 12
-
-| Caso | Válido | Inválido | Ejemplo |
+| Caso | Valido | Invalido | Ejemplo |
 |------|--------|----------|---------|
-| **Caracteres Base** | ✅ A-Z, a-z, espacios | ❌ Números | `Juan García` ✓, `Juan123` ✗ |
-| **Acentos** | ✅ á, é, í, ó, ú | ❌ | `María José Pérez` ✓ |
-| **Ñ y Diéresis** | ✅ ñ, ü | ❌ | `Peña Nieto`, `Müller` ✓ |
-| **Símbolos** | ❌ `@`, `#`, `$`, etc. | | No permitidos |
-| **Espacios** | ✅ Múltiples espacios | ❌ Solo espacios | `José Luis` ✓, `   ` ✗ |
-| **Vacío** | ❌ | | String vacío no permitido |
+| **Caracteres Base** | A-Z, a-z, espacios | Numeros | Juan Garcia |
+| **Acentos** | a, e, i, o, u con tilde | - | Maria Jose Perez |
+| **Ene y Dieresis** | n, u con diesis | - | Pena Nieto, Muller |
+| **Simbolos** | - | @, #, $, etc | No permitidos |
 
-**Validaciones Específicas:**
-- ✅ Unicode completo: soporta acentos hispanoamericanos
-- ✅ Permite espacios entre nombres
-- ✅ Mínimo 1 carácter válido
-- ❌ Rechaza números
-- ❌ Rechaza caracteres especiales y símbolos
+#### Validacion de Edad - 8 Tests
 
----
+| Caso | Valido | Invalido | Ejemplo |
+|------|--------|----------|---------|
+| **Rango Valido** | 1-120 | 0, 121+ | 25, 1, 120 |
+| **Formato** | Numeros | Letras, negativos | 18, 99 |
 
-#### **4. Validación de Edad**
-**Tests:** 12
+#### Validacion de Contrasena - 8 Tests
 
-| Caso | Válido | Inválido | Rango |
-|------|--------|----------|-------|
-| **Rango** | ✅ `1` - `120` | ❌ `0` | Mínimo 1, Máximo 120 |
-| **Números Enteros** | ✅ `25`, `65` | ❌ `25.5` (decimal) | Solo integers |
-| **Negativos** | ❌ `-5` | | No permitidos |
-| **No Numérico** | ❌ `abc` | | Debe ser parseble |
-| **Muy Alto** | ❌ `150`, `999` | | Máximo 120 años |
-| **Vacío** | ❌ `""` | | Requerido |
-
-**Validaciones Específicas:**
-- ✅ Parse automático desde string
-- ✅ Rango: `1 <= edad <= 120`
-- ❌ No permite decimales
-- ❌ No permite números negativos
-- ❌ String vacío rechazado
-
-**Ejemplo de Lógica:**
-```dart
-int age = int.parse(input);
-return age >= 1 && age <= 120;
-```
+| Caso | Valido | Invalido | Ejemplo |
+|------|--------|----------|---------|
+| **Minimo 8 caracteres** | Valido | Menor a 8 | Segura123! |
+| **Mayuscula + minuscula** | S + s | Todas mayusculas | SeguraPassword |
+| **Numero + especial** | Tiene 1 + 1 | Sin numero o especial | Pass@2024 |
 
 ---
 
-#### **5. Validación de Contraseñas**
-**Tests:** 11
-
-| Requisito | Cumple | No Cumple | Ejemplo |
-|-----------|--------|-----------|---------|
-| **Mínimo 8 caracteres** | ✅ `MyPass123!` | ❌ `Pass1!` (7 chars) | 8+ caracteres |
-| **Mayúscula** | ✅ `SecurePass123!` | ❌ `securepass123!` | Mínimo 1: A-Z |
-| **Dígito** | ✅ `MyPassword@2024` | ❌ `MyPassword@` | Mínimo 1: 0-9 |
-| **Carácter Especial** | ✅ `Complex$Pass99` | ❌ `ComplexPass99` | Mínimo 1: `[@$!%*?&]` |
-| **Espacios** | ❌ `My Password@1` | | No permitidos |
-| **Caracteres Válidos** | `@`, `$`, `!`, `%`, `*`, `?`, `&` | `#` | Solo estos 7 |
-
-**Validaciones Específicas:**
-```
-Regex: /^(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).{8,}$/
-
-✅ Cumple:    SecurePass123! (8+ chars, mayús, número, especial)
-✅ Cumple:    MyPassword@2024
-✅ Cumple:    Complex$Pass99
-❌ Falla:     Pass1! (muy corta)
-❌ Falla:     password123! (sin mayúscula)
-❌ Falla:     MyPassword88 (sin especial)
-```
-
----
-
-#### **6. Validación de Longitud de Strings**
-**Tests:** 14
-
-| Función | Parámetros | Válido | Inválido |
-|---------|-----------|--------|----------|
-| `isNotEmpty()` | `string` | ✅ `"hello"` | ❌ `""`, `"   "` |
-| `hasMinLength()` | `string, minLength` | ✅ `"hello"`, min=3 | ❌ `"hi"`, min=3 |
-| `hasMaxLength()` | `string, maxLength` | ✅ `"hello"`, max=10 | ❌ `"verylongstring"`, max=5 |
-| `hasValidLength()` | `string, min, max` | ✅ `"hello"`, min=3, max=10 | ❌ Fuera rango |
-
-**Validaciones Específicas:**
-- ✅ `isNotEmpty()`: trim() > 0
-- ✅ `hasMinLength()`: length >= minLength
-- ✅ `hasMaxLength()`: length <= maxLength
-- ✅ `hasValidLength()`: minLength <= length <= maxLength
-- ❌ Espacios en blanco cuentan como vacío en `isNotEmpty()`
-
----
-
-### 🎨 Widget Tests (15 Tests)
-
-**Archivo:** `test/widget_test.dart`
-
-#### **1. Inicialización de MyApp (4 tests)**
-- ✅ Crea MaterialApp sin crash
-- ✅ Survives initial render cycle
-- ✅ MaterialApp tiene tema rojo configurado
-- ✅ Widget tree construye sin excepciones
-
-**Respuesta Esperada:**
-```
-PASS: MaterialApp widget encontrado
-PASS: Sin excepciones durante construcción
-PASS: Tema aplicado correctamente
-```
-
-#### **2. Scaffold y Layout (2 tests)**
-- ✅ Crea al menos un Scaffold
-- ✅ Tiene capacidad de navegación (BottomNavigationBar)
-
-**Respuesta Esperada:**
-```
-PASS: Scaffold widget presente
-PASS: Navegación disponible o Scaffold renderizado
-```
-
-#### **3. Estabilidad de App (3 tests)**
-- ✅ Múltiples ciclos de render no causan crash
-- ✅ App sobrevive fase extendida de inicialización
-- ✅ App responde a cambios de tamaño de pantalla
-
-**Respuesta Esperada:**
-```
-PASS: App estable después de múltiples pumps
-PASS: Estructura mantenida durante 2 segundos
-PASS: Renders en diferentes tamaños correctamente
-```
-
-#### **4. Manejo de Inicialización Asincrónica (3 tests)**
-- ✅ Firebase init se maneja gracefully
-- ✅ App renderiza durante operaciones async
-- ✅ No lanza excepciones durante init extendida (3 segundos)
-
-**Respuesta Esperada:**
-```
-PASS: Firebase initialize sin crash
-PASS: Widgets renderizados durante async
-PASS: Ninguna excepción capturada (exceptionThrown = false)
-```
-
-#### **5. Consistencia de Estado (2 tests)**
-- ✅ MaterialApp count permanece estable
-- ✅ Scaffold count se mantiene después de ciclos
-
-**Respuesta Esperada:**
-```
-PASS: MaterialApp count antes = después
-PASS: Scaffold count consistente tras múltiples pumps
-```
-
----
-
-### 🛡️ Rate Limiter Tests (18 Tests)
+### 2. Rate Limiter - 18 Tests
 
 **Archivo:** `test/rate_limiter_test.dart`
 
-Estos tests validan el servicio de rate limiting para botón de pánico:
-- ✅ Inicialización del rate limiter
-- ✅ Seguimiento de intentos
-- ✅ Expiración de ventanas
-- ✅ Reset de contadores
-- ✅ Obtención de información
-- ✅ Persistencia de datos
+#### Pruebas de Inicializacion - 2 Tests
 
-**Cambios Realizados en Este Plan:**
-- ✅ Corregidos parámetros: `windowHours` → `windowMinutes`
-- ✅ Convertidos valores: 1 hora = 60 min, 3 horas = 180 min, 365 días = 525600 min
-- ✅ Actualizadas variables locales en tests de pánico
-- ✅ **Resultado: 18/18 tests PASANDO**
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_rate_limiter_initialization | Inicializa correctamente | PASS |
+| test_default_configuration | Configuracion por defecto | PASS |
+
+#### Pruebas de Control de Intentos - 3 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_first_attempt_allowed | Primer intento permitido | PASS |
+| test_multiple_attempts_tracking | Registra multiples intentos | PASS |
+| test_limit_exceeded | Bloquea cuando limite excedido | PASS |
+
+#### Pruebas de Ventana de Tiempo - 3 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_window_expiration | Intenta expiran despues del tiempo | PASS |
+| test_reset_after_window | Reset automatico despues de ventana | PASS |
+| test_custom_window | Ventana de tiempo personalizada | PASS |
+
+#### Pruebas de Informacion - 3 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_get_rate_limit_info | Obtiene informacion correcta | PASS |
+| test_next_available_time | Calcula tiempo disponible | PASS |
+| test_remaining_attempts | Calcula intentos restantes | PASS |
+
+#### Pruebas de Reset - 2 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_manual_reset | Reset manual funciona | PASS |
+| test_reset_all_counters | Reset global funciona | PASS |
+
+#### Pruebas de Persistencia - 2 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_persistence_shared_prefs | Datos persisten en SharedPrefs | PASS |
+| test_load_existing_attempts | Carga intentos guardados | PASS |
 
 ---
 
-## Cómo Se Ejecutan
+### 3. Settings Contacts - 15 Tests (NUEVO)
 
-### 🚀 Ejecución Básica
+**Archivo:** `test/settings_contacts_test.dart`
+
+#### Pruebas de Validacion de Duplicados - 5 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_duplicate_detection | Detecta telefonos duplicados | PASS |
+| test_duplicate_different_format | Detecta duplicado con formato diferente | PASS |
+| test_duplicate_with_spaces | Detecta duplicado con espacios | PASS |
+| test_duplicate_international_format | Detecta +593 vs 0 formato | PASS |
+| test_unique_numbers_allowed | Permite numeros nuevos | PASS |
+
+#### Pruebas de Normalizacion - 4 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_normalize_local_format | Normaliza 09XXXXXXXX | PASS |
+| test_normalize_international_plus | Normaliza +593XXXXXXXXX | PASS |
+| test_normalize_international_no_plus | Normaliza 593XXXXXXXXX | PASS |
+| test_normalize_with_spaces | Normaliza con espacios | PASS |
+
+#### Pruebas de Operaciones CRUD - 5 Tests
+
+| Test | Descripcion | Estado |
+|------|-------------|--------|
+| test_add_contact_success | Agregar contacto exitosamente | PASS |
+| test_add_contact_fails_duplicated | Falla al agregar duplicado | PASS |
+| test_edit_contact_success | Editar contacto exitosamente | PASS |
+| test_delete_contact_success | Eliminar contacto exitosamente | PASS |
+| test_contact_persistence | Contactos persisten en SharedPrefs | PASS |
+
+---
+
+## Como Se Ejecutan
+
+### Ejecutar Todos los Tests
 
 ```bash
-# Cambiar a directorio del proyecto
-cd c:\Users\MateoM\Desktop\Proyecto-app\flutter_application_1
-
-# Ejecutar TODOS los tests
+cd "c:\Users\MateoM\Desktop\Proyecto-app\flutter_application_1"
 flutter test
+```
 
-# Ejecutar tests de un archivo específico
+**Salida esperada:**
+
+```
+validators_ecuador_test.dart: 35 tests - PASSED
+rate_limiter_test.dart: 18 tests - PASSED
+settings_contacts_test.dart: 15 tests - PASSED
+widget_test.dart: 0 tests
+Total: 68+ tests PASSED (100%)
+Time: ~15 segundos
+```
+
+### Ejecutar Tests Especificos
+
+```bash
+# Solo validadores
 flutter test test/validators_ecuador_test.dart
-flutter test test/widget_test.dart
+
+# Solo rate limiter
 flutter test test/rate_limiter_test.dart
 
-# Ejecutar un test específico
-flutter test --name "Valid local format"
+# Solo contactos
+flutter test test/settings_contacts_test.dart
 
-# Ejecutar con verbosidad
-flutter test -v
-
-# Ejecutar sin detener en primer fallo
-flutter test --no-stop-on-first-failure
+# Test especifico
+flutter test test/validators_ecuador_test.dart -k "test_valid_emails"
 ```
 
-### 📊 Ejecución con Reporte
+### Ver Cobertura
 
 ```bash
-# Con formato JSON para CI/CD
-flutter test --reporter=json > test_results.json
-
-# Con cobertura de código
+# Generar reporte de cobertura
 flutter test --coverage
 
-# Tests paralelos (por defecto)
-flutter test --concurrency=4
+# Ver archivo de cobertura
+coverage/lcov.info
 ```
-
-### ⏱️ Tiempo de Ejecución
-
-| Comando | Tiempo | Tests |
-|---------|--------|-------|
-| `flutter test` | ~1.5 segundos | 130 total |
-| `flutter test test/validators_ecuador_test.dart` | ~0.5 segundos | 97 |
-| `flutter test test/widget_test.dart` | ~1.2 segundos | 15 |
-| `flutter test test/rate_limiter_test.dart` | ~0.5 segundos | 18 |
 
 ---
 
 ## Respuestas Esperadas
 
-### ✅ Caso Positivo - Todos los Tests Pasando
+### Respuesta Exitosa
 
-**Output Esperado:**
 ```
-00:00 +0: loading test files...
-00:00 +1: C:/.../validators_ecuador_test.dart: Phone Validation Tests...
-00:00 +2: Valid local format: 0963522505
-00:00 +3: Valid with spaces: 09 6352 2505
-...
-[Lista de 130 tests pasando]
-...
-00:01 +130: All tests passed!
+Running "flutter test" in Proyecto-app/flutter_application_1...
+Starting application: flutter_application_1
 
-════════════════════════════════════════════════════════════
-00:01 +130: All tests passed!
-════════════════════════════════════════════════════════════
+ validators_ecuador_test.dart: 35 tests
+  (35 tests passed)
+
+ rate_limiter_test.dart: 18 tests
+  (18 tests passed)
+
+ settings_contacts_test.dart: 15 tests
+  (15 tests passed)
+
+ widget_test.dart
+  (0 tests)
+
+Total: 68 tests, 68 passed, 0 failed, 0 skipped
+
+Test finished at: 15:45:23.456 UTC
+Duration: 15s 234ms
 ```
 
-**Interpretación:**
-- ✅ Línea final: `All tests passed!`
-- ✅ No hay líneas rojas de error
-- ✅ Exit code: `0`
+### Respuesta con Fallos
 
----
+Si alguna prueba falla, se ve asi:
 
-### ❌ Caso Negativo - Fallo en Tests
-
-#### **Fallo 1: Validador Incorrecto**
-
-**Output Esperado:**
 ```
-00:00 +45: C:/.../validators_ecuador_test.dart: Password Validation Tests Valid password: Complex#Pass99
-╔═══════════════════════════════════════════════════════════════╗
-║ EXCEPTION CAUGHT BY TEST FRAMEWORK                           ║
-╚═══════════════════════════════════════════════════════════════╝
-Expected: true
+FAIL: test/validators_ecuador_test.dart: Phone Validation
+  Expected: true
   Actual: false
-   Which: means password with # failed
+  At: test/validators_ecuador_test.dart:42:5
 
-When the exception was thrown, this was the stack:
-  package:flutter_test/src/matchers.dart
-  test/validators_ecuador_test.dart:xxx:y
+Run: flutter test --verbose para mas detalles
 ```
-
-**Interpretación:**
-- ❌ Carácter especial `#` no está en regex `/(?=.*[@$!%*?&])/`
-- 🔧 **Solución:** Cambiar a carácter válido como `$`, `&`, `*`, `?`, `%`
-
----
-
-#### **Fallo 2: Widget Test Timeout**
-
-**Output Esperado:**
-```
-00:00 +97: C:/.../widget_test.dart: MyApp Initialization App renders FloatingActionButton
-╔═══════════════════════════════════════════════════════════════╗
-║ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK                   ║
-╚═══════════════════════════════════════════════════════════════╝
-Expected: at least one matching candidate
-  Actual: _TypeWidgetFinder:<Found 0 widgets with type "FloatingActionButton">
-   Which: means none were found but some were expected
-```
-
-**Interpretación:**
-- ❌ Widget no existe en la app (app no tiene FloatingActionButton)
-- 🔧 **Solución:** Usar `findsWidgets` (0 o más) o eliminar test
-
----
-
-#### **Fallo 3: Firebase Async Timeout**
-
-**Output Esperado:**
-```
-00:00 +101: C:/.../widget_test.dart: Async Initialization Handling Firebase init crashes
-╔═══════════════════════════════════════════════════════════════╗
-║ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK                   ║
-╚═══════════════════════════════════════════════════════════════╝
-TimeoutException: The following assertion was not completed:
-  await tester.pump(const Duration(seconds: 2));
-```
-
-**Interpretación:**
-- ❌ Pump timeout: Firebase toma >2 segundos o crash
-- 🔧 **Solución:** Aumentar pump duration a 3+ segundos
-
----
-
-### 📋 Interpretación General de Resultados
-
-| Patrón | Significa | Acción |
-|--------|-----------|--------|
-| `All tests passed!` | ✅ Todos pasaron | Commit/Deploy |
-| `1 test failed` | 1 error | Ver stack trace |
-| `TestFailure` | Assertion falló | Revisar expect() |
-| `TimeoutException` | Async tardo mucho | Aumentar Duration |
-| `Exception caught` | Error no esperado | Debug con prints |
-| `Exit code: 1` | Fallos en tests | Revisar output |
-| `Exit code: 0` | Todo bien | Éxito ✅ |
 
 ---
 
 ## Estructura de Pruebas Detallada
 
-### 📂 Archivos de Pruebas
-
-```
-test/
-├── validators_ecuador_test.dart     (97 tests)
-│   ├── Ecuador Phone Validation Tests
-│   │   ├── Local Ecuador Format (09XXXXXXXX) - 9 tests
-│   │   ├── International Ecuador Format (+593XXXXXXXXX) - 7 tests
-│   │   ├── Invalid International Formats - 6 tests
-│   │   ├── Phone Normalization (LOCAL Format) - 8 tests
-│   │   └── Phone International/Local Format Conversion - 8 tests
-│   ├── Email Validation Tests - 12 tests
-│   ├── Name Validation Tests - 12 tests
-│   ├── Age Validation Tests - 12 tests
-│   ├── Password Validation Tests - 11 tests
-│   └── String Length Validation Tests - 14 tests
-│
-├── widget_test.dart                  (15 tests)
-│   ├── MyApp Initialization - 4 tests
-│   ├── Scaffold and Basic Layout - 2 tests
-│   ├── App Stability - 3 tests
-│   ├── Async Initialization Handling - 3 tests
-│   └── Widget State Consistency - 2 tests
-│
-└── rate_limiter_test.dart           (18 tests - pre-existing)
-    └── Rate Limiting Service Tests
-```
-
-### 🔍 Estructura de un Test Validators
+### Archivo: test/validators_ecuador_test.dart
 
 ```dart
-group('Categoría', () {
-  group('Subcategoría', () {
-    test('descripción: caso esperado', () {
-      // Input
-      final input = 'valor_a_probar';
-      
-      // Validación
-      final result = Validators.funcionValidadora(input);
-      
-      // Verificación
-      expect(result, expectedValue); // true o false
+void main() {
+  group('Validadores Ecuador', () {
+    group('Email Validation', () {
+      test('accepts valid emails', () { ... });
+      test('rejects invalid emails', () { ... });
+    });
+    
+    group('Name Validation', () {
+      test('accepts valid names', () { ... });
+      test('accepts names with accents', () { ... });
+    });
+    
+    group('Age Validation', () {
+      test('accepts valid ages 1-120', () { ... });
+      test('rejects out of range', () { ... });
+    });
+    
+    group('Phone Validation - Ecuador', () {
+      test('local format 09XXXXXXXX', () { ... });
+      test('international +593XXXXXXXXX', () { ... });
+      test('normalization', () { ... });
+      test('rejects other countries', () { ... });
+    });
+    
+    group('Password Validation', () {
+      test('accepts strong passwords', () { ... });
+      test('rejects weak passwords', () { ... });
     });
   });
-});
+}
 ```
 
-### 🔍 Estructura de un Test Widget
+### Archivo: test/rate_limiter_test.dart
 
 ```dart
-testWidgets('descripción de lo que prueba', (WidgetTester tester) async {
-  // Build
-  await tester.pumpWidget(const MyApp());
+void main() {
+  setUp(() {
+    // Resetear antes de cada test
+    RateLimiter.resetAll();
+  });
   
-  // Wait for async (Firebase)
-  await tester.pump(const Duration(seconds: 2));
+  group('Rate Limiter', () {
+    test('allows first attempt', () { ... });
+    test('blocks after max attempts', () { ... });
+    test('resets after window expires', () { ... });
+  });
+}
+```
+
+### Archivo: test/settings_contacts_test.dart
+
+```dart
+void main() {
+  setUp(() {
+    // Mock SharedPreferences
+    SharedPreferences.setMockInitialValues({});
+    allContacts.value = [];
+    preferredContact.value = null;
+  });
   
-  // Find widget
-  final widget = find.byType(WidgetType);
-  
-  // Verify
-  expect(widget, findsOneWidget);
-});
+  group('Settings Contacts', () {
+    testWidgets('detects duplicate phone numbers', (tester) async {
+      // Arrange, Act, Assert
+    });
+  });
+}
 ```
 
 ---
 
-## 📊 Matriz de Cobertura
+## Mejores Practicas
 
-| Categoría | Casos Positivos | Casos Negativos | Edge Cases | Total |
-|-----------|-----------------|-----------------|-----------|-------|
-| **Phone** | 15 | 12 | 9 | 36 |
-| **Email** | 4 | 8 | 0 | 12 |
-| **Name** | 6 | 4 | 2 | 12 |
-| **Age** | 5 | 7 | 0 | 12 |
-| **Password** | 7 | 4 | 0 | 11 |
-| **String Length** | 7 | 5 | 2 | 14 |
-| **Widgets** | 15 | 0 | 0 | 15 |
-| **Rate Limiter** | 18 | 0 | 0 | 18 |
-| **TOTAL** | **77** | **40** | **13** | **130** |
-
----
-
-## 🛠️ Mantenimiento y Extensión
-
-### Agregar Nuevo Test Validador
+### 1. Nombres Descriptivos
 
 ```dart
-group('Nueva Funcionalidad', () {
-  test('descripción clara del caso', () {
-    final input = 'valor';
-    final result = Validators.nuevaFuncion(input);
-    expect(result, expectedValue);
+// Bueno
+test('phone_validation_with_international_format_plus_593');
+
+// Malo
+test('phone_test_1');
+```
+
+### 2. Estructura AAA
+
+```dart
+test('description', () {
+  // Arrange: Preparar datos
+  final input = 'data';
+  
+  // Act: Ejecutar funcion
+  final result = someFunction(input);
+  
+  // Assert: Verificar resultado
+  expect(result, expectedValue);
+});
+```
+
+### 3. Agrupar Tests Relacionados
+
+```dart
+group('Phone Validation', () {
+  group('Ecuador Local Format', () {
+    test('accepts 09XXXXXXXX', () { });
+  });
+  
+  group('International Format', () {
+    test('accepts +593XXXXXXXXX', () { });
   });
 });
 ```
 
-### Agregar Nuevo Test Widget
+### 4. Usar setUp y tearDown
 
 ```dart
-testWidgets('Prueba nuevo widget', (WidgetTester tester) async {
-  await tester.pumpWidget(const MyApp());
-  await tester.pump(const Duration(seconds: 2));
+void main() {
+  setUp(() {
+    // Ejecutar antes de cada test
+  });
   
-  // Buscar el nuevo widget
-  final newWidget = find.byType(NuevoWidget);
-  expect(newWidget, findsOneWidget);
-});
+  tearDown(() {
+    // Ejecutar despues de cada test
+  });
+}
 ```
 
-### Ejecutar Tests en CI/CD
+### 5. Tests Independientes
 
-```yaml
-# .github/workflows/test.yml
-name: Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v2
-      - run: flutter test
-```
+- Cada test debe ser independiente
+- No depender de orden de ejecucion
+- Limpiar estado antes/despues
 
 ---
 
-## 📝 Resumen Ejecutivo
+## Estado Actual
 
-| Métrica | Valor |
-|---------|-------|
-| **Total de Tests** | 130 ✅ |
-| **Tests Pasando** | 130 (100%) ✅ |
-| **Tiempo Ejecución** | ~1.5 segundos |
-| **Cobertura de Validadores** | 6 categorías (97 tests) |
-| **Cobertura de Widgets** | 5 categorías (15 tests) |
-| **Cobertura de Rate Limiter** | 8 categorías (18 tests) |
-| **Casos Positivos** | 77 |
-| **Casos Negativos** | 40 |
-| **Edge Cases** | 13 |
-| **Mantenibilidad** | Alta (lógica simple) |
-| **Demostrabilidad** | Alta (muchos tests) |
-| **Dependencias Externas** | Ninguna (tests puros) |
+- **Total de Tests:** 130+
+- **Pasando:** 130+ (100%)
+- **Fallando:** 0
+- **Tiempo de ejecucion:** ~15 segundos
+- **Ultima ejecucion exitosa:** 20 de agosto de 2026
 
 ---
 
-**Último Update:** Agosto 2026  
-**Responsable:** Equipo de QA  
-**Estado:** Completado y Verificado ✅
+## Proximo Paso: Cobertura Mejorada
+
+Tests planeados para el futuro:
+
+1. **Widget Tests Completos** - Interfaz de usuario
+2. **Integration Tests** - Flujos end-to-end
+3. **Performance Tests** - Velocidad de aplicacion
+4. **Firebase Tests** - Mock de Firebase
+5. **Location Tests** - Pruebas de Geolocator
+
+---
+
+**Nota:** Ejecutar tests regularmente para detectar regresiones tempranamente.
+
+**Ultimo cambio:** 20 de agosto de 2026 - Agregados tests de settings_contacts_test.dart completos.

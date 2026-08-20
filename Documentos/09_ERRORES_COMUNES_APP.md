@@ -1,16 +1,19 @@
-# Posibles Errores de la App
-**Última actualización:** 21 de julio de 2026  
-**Versión:** 1.4.60  
-**Estado:** Documentación de referencia
+# Errores Comunes de la Aplicacion
+
+**Version:** 1.4.67  
+**Fecha:** 20 de agosto de 2026  
+**Estado:** Produccion
+
 ---
 
-## Índice
+## Indice
+
 1. [Errores de Firebase](#errores-de-firebase)
-2. [Errores de Ubicación](#errores-de-ubicación)
+2. [Errores de Ubicacion](#errores-de-ubicacion)
 3. [Errores de Notificaciones FCM](#errores-de-notificaciones-fcm)
 4. [Errores de Permisos](#errores-de-permisos)
 5. [Errores de Conectividad](#errores-de-conectividad)
-6. [Errores de Sincronización](#errores-de-sincronización)
+6. [Errores de Sincronizacion](#errores-de-sincronizacion)
 7. [Errores de UI/Pantalla](#errores-de-uipantalla)
 8. [Errores de Rate Limiting](#errores-de-rate-limiting)
 
@@ -19,6 +22,7 @@
 ## Errores de Firebase
 
 ### [ERROR] Error: "Permission Denied"
+
 ```
 E/flutter (11111): Firebase error: permission denied
 E/firebase-database (11111): permission_denied: Custom claim "admin" is missing
@@ -32,27 +36,20 @@ E/firebase-database (11111): permission_denied: Custom claim "admin" is missing
 **Soluciones:**
 1. Ve a [Firebase Console](https://console.firebase.google.com/)
 2. Selecciona tu proyecto → **Realtime Database → Rules**
-3. Asegúrate que tengas:
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
+3. Asegúrate que tengas reglas de lectura/escritura correctas
 4. Click **"Publish"**
 5. Reinicia la app: `flutter run`
 
 ---
 
 ### [ERROR] Error: "Firebase Not Initialized"
+
 ```
 E/flutter (11111): PlatformException(error, Firebase has not been initialized, null)
 ```
 
 **Causas:**
-- Firebase no se inicializó correctamente
+- Firebase no se inicializo correctamente
 - Archivo google-services.json falta o corrupto
 
 **Soluciones:**
@@ -70,6 +67,7 @@ flutter run
 ---
 
 ### [ERROR] Error: "Reference Child Null"
+
 ```
 E/flutter (11111): NoSuchMethodError: The getter 'child' was called on null
 ```
@@ -83,35 +81,36 @@ E/flutter (11111): NoSuchMethodError: The getter 'child' was called on null
    - Ve a Firebase Console → Realtime Database
    - Confirma que el nodo existe
 
-2. En el código, verifica:
+2. En el codigo, verifica que la ruta sea correcta:
 ```dart
-DatabaseReference ref = _database.child('alerts').child('emerg_${timestamp}');
-// Asegúrate de que 'alerts' existe
+DatabaseReference ref = _database.child('alerts');
 ```
 
 ---
 
 ### [ERROR] Error: "Database Connection Lost"
+
 ```
 E/firebase-database (11111): Connection lost: Network error
 ```
 
 **Causas:**
-- Sin conexión a internet
+- Sin conexion a internet
 - Firebase servidor no responde
 - Problema de firewall
 
 **Soluciones:**
-1. Verifica tu conexión a internet
-2. Cambia a otra red WiFi o datos móviles
+1. Verifica tu conexion a internet
+2. Cambia a otra red WiFi o datos moviles
 3. Reinicia el emulador o dispositivo
 4. Verifica estado de Firebase en https://status.firebase.google.com/
 
 ---
 
-## Errores de Ubicación
+## Errores de Ubicacion
 
 ### [ERROR] Error: "Location Services Disabled"
+
 ```
 E/geolocator (11111): Location services are disabled
 E/flutter (11111): Failed to get location: LOCATION_SERVICES_DISABLED
@@ -119,105 +118,96 @@ E/flutter (11111): Failed to get location: LOCATION_SERVICES_DISABLED
 
 **Causas:**
 - GPS desactivado en el dispositivo
-- Ubicación no está habilitada
+- Ubicacion no esta habilitada
 
 **Soluciones:**
-1. Abre **Configuración → Ubicación**
-2. Activa **"Ubicación"** o **"Location"**
-3. Asegúrate que esté en modo **"Alta precisión"** o **"GPS"**
+1. Abre **Configuracion → Ubicacion**
+2. Activa **"Ubicacion"** o **"Location"**
+3. Asegurate que este en modo **"Alta precision"** o **"GPS"**
 4. Reinicia la app
 
 ---
 
 ### [ERROR] Error: "Permission Denied - Location"
+
 ```
 E/geolocator (11111): Permission denied when querying the platforms geolocation
 E/flutter (11111): Failed to get location: permission denied
 ```
 
 **Causas:**
-- Permiso de ubicación no otorgado
-- Permiso revocado en configuración
+- Permiso de ubicacion no otorgado
+- Permiso revocado en configuracion
 
 **Soluciones:**
-1. La app debería pedir permiso la primera vez
+1. La app deberia pedir permiso la primera vez
 2. Si ya fue rechazado:
-   - Abre **Configuración → Aplicaciones → [TU APP]**
-   - En **"Permisos" → "Ubicación"**, selecciona **"Permitir solo esta vez"** o **"Permitir"**
+   - Abre **Configuracion → Aplicaciones → [TU APP]**
+   - En **"Permisos" → "Ubicacion"**, selecciona **"Permitir solo esta vez"** o **"Permitir"**
 3. Reinicia la app
 4. Intenta de nuevo
 
 ---
 
 ### [ERROR] Error: "Geocoding Failed"
+
 ```
 E/geocoding (11111): Unable to geocode coordinates
 E/flutter (11111): PlatformException: GEOCODER_ERROR
 ```
 
 **Causas:**
-- Coordenadas inválidas
-- Sin conexión a internet (geocoding requiere internet)
-- Límite de requests excedido
+- Coordenadas invalidas
+- Sin conexion a internet (geocoding requiere internet)
+- Limite de requests excedido
 
 **Soluciones:**
-1. Verifica que tengas conexión a internet
-2. Los logs deberían mostrar:
-```
-I/flutter (11111): Location obtained: lat=0.2340, lon=-78.5091
-```
-3. Si las coordenadas son válidas, intenta de nuevo más tarde
-4. Alternativamente, puedes mostrar solo coordenadas:
-```dart
-double latitude = position.latitude;
-double longitude = position.longitude;
-String message = "$latitude, $longitude";
-```
+1. Verifica que tengas conexion a internet
+2. Los logs deberan mostrar coordenadas validas
+3. Si las coordenadas son validas, intenta de nuevo mas tarde
+4. Alternativamente, puedes mostrar solo coordenadas sin geocoding
 
 ---
 
 ### [ERROR] Error: "Timeout Getting Location"
+
 ```
 E/geolocator (11111): TimeoutException: Failed to get location within 30 seconds
 ```
 
 **Causas:**
-- GPS tarda mucho en obtener señal
-- Estás en interiores o sin línea de vista al cielo
+- GPS tarda mucho en obtener senal
+- Estas en interiores o sin linea de vista al cielo
 
 **Soluciones:**
 1. Ve a un lugar abierto con vista al cielo
-2. Espera más tiempo a que el GPS se estabilice
-3. Incrementa el timeout en el código:
-```dart
-Position position = await Geolocator.getCurrentPosition(
-  timeLimit: Duration(seconds: 60), // Incrementa de 30 a 60
-);
-```
+2. Espera mas tiempo a que el GPS se estabilice
+3. Incrementa el timeout en el codigo si es necesario
 
 ---
 
 ## Errores de Notificaciones FCM
 
 ### [ERROR] Error: "FCM Token Refresh Failed"
+
 ```
 E/FirebaseMessaging (11111): Failed to refresh FCM token
 E/flutter (11111): FCM token error: Token refresh failed
 ```
 
 **Causas:**
-- Firebase no está inicializado
-- Problemas de conexión
+- Firebase no esta inicializado
+- Problemas de conexion
 - google-services.json corrupto
 
 **Soluciones:**
 ```bash
-# Opción 1: Limpiar y reconstruir
+# Opcion 1: Limpiar y reconstruir
 flutter clean
 flutter pub get
 flutter run
 
-# Opción 2: Verificar google-services.json
+# Opcion 2: Verificar google-services.json
 # - Ve a Firebase Console
 # - Descarga google-services.json nuevamente
 # - Coloca en android/app/
@@ -226,6 +216,7 @@ flutter run
 ---
 
 ### [ERROR] Error: "Notifications Not Received"
+
 ```
 # No hay mensaje de error, pero no llegan notificaciones
 ```
@@ -233,32 +224,25 @@ flutter run
 **Causas:**
 - FCM token no registrado
 - App fue desinstalada sin guardar token
-- Notificaciones deshabilitadas en configuración
-- Servidor no envía correctamente
+- Notificaciones deshabilitadas en configuracion
+- Servidor no envia correctamente
 
 **Soluciones:**
-1. Verifica que FCM está inicializado:
-```dart
-I/flutter (11111): FCM token obtained: eZ1T8K...
-```
-
+1. Verifica que FCM esta inicializado
 2. Otorga permiso de notificaciones:
-   - **Configuración → Notificaciones → [TU APP]** → Habilitar
-
-3. Prueba una notificación manualmente desde Firebase Console:
-   - Ir a **Cloud Messaging**
-   - Crear nueva campaña
-   - Seleccionar dispositivo específico
+   - **Configuracion → Notificaciones → [TU APP]** → Habilitar
+3. Prueba una notificacion manualmente desde Firebase Console
 
 ---
 
 ### [ERROR] Error: "BadTokenForSender"
+
 ```
 E/Firebase-Messaging (11111): Error: InvalidRegistration: Invalid registration token provided
 ```
 
 **Causas:**
-- Token FCM inválido o expirado
+- Token FCM invalido o expirado
 - google-services.json de diferente proyecto
 - Token de diferente app
 
@@ -279,6 +263,7 @@ flutter run
 ## Errores de Permisos
 
 ### [ERROR] Error: "Permission Handler Exception"
+
 ```
 E/PermissionHandler (11111): PermissionException: Permission denied
 E/flutter (11111): PermissionHandler error: Failed to request permission
@@ -287,28 +272,29 @@ E/flutter (11111): PermissionHandler error: Failed to request permission
 **Causas:**
 - Permisos no declarados en AndroidManifest.xml
 - Permisos no declarados en Info.plist (iOS)
-- Usuario rechazó permiso
+- Usuario rechazo permiso
 
 **Soluciones:**
 1. Verifica [05_PERMISOS_REQUERIDOS.md](05_PERMISOS_REQUERIDOS.md)
-2. Asegúrate que todos los permisos están declarados:
+2. Asegurate que todos los permisos estan declarados:
    - Para Android: `android/app/src/main/AndroidManifest.xml`
    - Para iOS: `ios/Runner/Info.plist`
 
 ---
 
 ### [ERROR] Error: "Permission Permanently Denied"
+
 ```
 W/flutter (11111): Permission permanently denied
 W/flutter (11111): Need to open app settings
 ```
 
 **Causas:**
-- Usuario seleccionó "No preguntar de nuevo"
+- Usuario selecciono "No preguntar de nuevo"
 
 **Soluciones:**
-1. El usuario debe abrir configuración manualmente:
-   - **Configuración → Aplicaciones → [TU APP] → Permisos**
+1. El usuario debe abrir configuracion manualmente:
+   - **Configuracion → Aplicaciones → [TU APP] → Permisos**
    - Habilitar permisos requeridos
 
 ---
@@ -316,25 +302,27 @@ W/flutter (11111): Need to open app settings
 ## Errores de Conectividad
 
 ### [ERROR] Error: "No Internet Connection"
+
 ```
 E/flutter (11111): SocketException: Connection refused
 E/flutter (11111): Failed to connect to network
 ```
 
 **Causas:**
-- Sin WiFi ni datos móviles
-- Dispositivo en modo avión
+- Sin WiFi ni datos moviles
+- Dispositivo en modo avion
 - Problema de red
 
 **Soluciones:**
-1. Verifica WiFi/datos móviles
-2. Desactiva modo avión
+1. Verifica WiFi/datos moviles
+2. Desactiva modo avion
 3. Reinicia el dispositivo
 4. Prueba con otra red
 
 ---
 
 ### [ERROR] Error: "Timeout - Connection"
+
 ```
 E/flutter (11111): TimeoutException: Connection timeout after 30 seconds
 ```
@@ -345,52 +333,43 @@ E/flutter (11111): TimeoutException: Connection timeout after 30 seconds
 - Firewall bloqueando
 
 **Soluciones:**
-1. Verifica que Firebase está disponible
-2. Prueba con internet más rápida
-3. Incrementa timeout:
-```dart
-final httpClient = HttpClient();
-httpClient.connectionTimeout = Duration(seconds: 60);
-```
+1. Verifica que Firebase esta disponible
+2. Prueba con internet mas rapida
+3. Incrementa timeout si es necesario
 
 ---
 
-## Errores de Sincronización
+## Errores de Sincronizacion
 
 ### [ERROR] Error: "Sync Queue Full"
+
 ```
 E/flutter (11111): Sync queue full: Maximum items reached
 ```
 
 **Causas:**
 - Demasiados items pendientes de sincronizar
-- Servidor no procesa rápido
+- Servidor no procesa rapido
 
 **Soluciones:**
 1. Conecta a internet para sincronizar
-2. Espera a que se sincronicen automáticamente
-3. O limpia la cola manualmente:
-```dart
-// En AlertService
-_syncQueue.clear();
-```
+2. Espera a que se sincronicen automaticamente
+3. O limpia la cola si es necesario
 
 ---
 
 ### [ERROR] Error: "Sync Conflict - Duplicate Data"
+
 ```
 W/flutter (11111): Sync conflict detected: Item already exists
 ```
 
 **Causas:**
-- Item se sincronizó dos veces
+- Item se sincronizo dos veces
 - Timestamp duplicado
 
 **Soluciones:**
-1. Usa timestamp único:
-```dart
-String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-```
+1. Usa timestamp unico
 2. Verifica en Firebase Console si hay duplicados
 3. Elimina manualmente si es necesario
 
@@ -399,141 +378,58 @@ String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
 ## Errores de UI/Pantalla
 
 ### [ERROR] Error: "RenderFlex Overflow"
+
 ```
-E/flutter (11111): RenderFlex children have non-zero flex but incoming height constraints are unbounded
+E/flutter (11111): RenderFlex overflowed by XXX pixels on the bottom
 ```
 
 **Causas:**
-- Widget sin tamaño definido
-- Demasiados widgets en Column/Row
+- Widget es mas grande que el espacio disponible
+- Contenido no cabe en la pantalla
 
 **Soluciones:**
-Envuelve con Expanded o SingleChildScrollView:
-```dart
-SingleChildScrollView(
-  child: Column(
-    children: [...],
-  ),
-)
-```
+1. Usa `SingleChildScrollView` para hacer scrolleable
+2. Ajusta tamaño de fuentes
+3. Reduce espaciado entre widgets
 
 ---
 
-### [ERROR] Error: "Widget Build Exceeded"
+### [ERROR] Error: "Widget Not Found"
+
 ```
-E/flutter (11111): The following assertion was thrown during build: 'package:flutter/src/widgets/text.dart'
+E/flutter (11111): Could not find a generator for route "/settings"
 ```
 
 **Causas:**
-- Texto muy largo sin límite
-- Widget llamando setState infinitamente
+- Ruta no esta definida en navigation
+- Nombre de ruta incorrecto
 
 **Soluciones:**
-1. Limita texto:
-```dart
-Text(
-  longText,
-  maxLines: 2,
-  overflow: TextOverflow.ellipsis,
-)
-```
-
-2. Usa SizedBox para tamaño fijo:
-```dart
-SizedBox(
-  height: 100,
-  child: Text(...),
-)
-```
+1. Verifica que la ruta este definida en main.dart
+2. Revisa la ortografia de la ruta
+3. Asegurate de usar `Navigator.push()` correctamente
 
 ---
 
 ## Errores de Rate Limiting
 
-### [ERROR] Error: "Rate Limit Exceeded"
+### [ERROR] Error: "Too Many Requests"
+
 ```
-E/flutter (11111): Rate limit exceeded: Max 3 emergencies per 3 hours
-W/flutter (11111): Alertas restantes: 0/3
-```
-
-**Causas:**
-- Ya activaste 3 alertas en las últimas 3 horas
-- Rate limiter funcionando correctamente
-
-**Soluciones:**
-1. Espera 3 horas desde la primer alerta
-2. Verifica el contador en la pantalla: "X/3"
-3. Colores:
-   - Verde (3/3): Tienes intentos
-   - Amarillo (1-2/3): Pocos intentos
-   - Rojo (0/3): Sin intentos
-
----
-
-### [ERROR] Error: "Inconsistent Rate Limit State"
-```
-E/flutter (11111): Rate limiter state mismatch
+E/flutter (11111): Rate limit exceeded: 4 attempts in 2 minutes
 ```
 
 **Causas:**
-- Datos locales corruptos
-- Sincronización offline fallida
+- Usuario intento activar emergencia demasiadas veces
+- Limite de rate limiting alcanzado
 
 **Soluciones:**
-1. Limpia datos locales:
-```bash
-adb shell pm clear com.example.flutter_application_1
-```
-2. O desde configuración: **Aplicaciones → Almacenamiento → Borrar datos**
-3. Reinstala la app
+1. Espera a que se restablezca la ventana (2 minutos por defecto)
+2. Los logs mostraran el tiempo de espera restante
+3. El usuario puede ver el indicador en la UI
 
 ---
 
-## Tabla de Referencia Rápida
+**Nota:** Consulta [08_MENSAJES_TERMINAL.md](08_MENSAJES_TERMINAL.md) para ver los mensajes en la terminal que corresponden con estos errores.
 
-| Error | Causa Probable | Solución Rápida |
-|-------|----------------|-----------------|
-| Permission Denied | Reglas Firebase | Verifica Firebase Console Rules |
-| No Location | GPS desactivado | Activar ubicación en Configuración |
-| No Notifications | FCM token inválido | `flutter clean && flutter run` |
-| Connection Timeout | Sin internet | Verifica WiFi/datos |
-| Sync Failed | Servidor no responde | Espera e intenta de nuevo |
-| Rate Limit | 3 intentos agotados | Espera 3 horas |
-| Overflow | Widget sin tamaño | Usa Expanded o SingleChildScrollView |
-| Token Error | google-services.json corrupto | Descarga nuevamente de Firebase |
-
----
-
-## Recursos Relacionados
-
-- [08_MENSAJES_TERMINAL.md](08_MENSAJES_TERMINAL.md) - Mensajes que verás en la consola
-- [05_PERMISOS_REQUERIDOS.md](05_PERMISOS_REQUERIDOS.md) - Permisos necesarios
-- [TESTING_FCM_RESUMEN.md](../TESTING_FCM_RESUMEN.md) - Pruebas de notificaciones
-- [TESTING_SINCRONIZACION_OFFLINE.md](../TESTING_SINCRONIZACION_OFFLINE.md) - Sincronización offline
-- [FIREBASE_SETUP_2026.md](../FIREBASE_SETUP_2026.md) - Configuración de Firebase
-
----
-
-## Si Nada Funciona
-
-1. **Intenta lo básico:**
-```bash
-flutter clean
-flutter pub get
-flutter run
-```
-
-2. **Reinicia todo:**
-   - Cierra Android Studio
-   - Detén emulador/dispositivo
-   - Abre terminal nuevamente
-   - Ejecuta `flutter run`
-
-3. **Revisa logs completos:**
-```bash
-flutter run > logs.txt 2>&1
-```
-
-4. **Consulta:**
-   - [TESTING_GUIA.md](../TESTING_GUIA.md)
-   - [INDICE_DOCUMENTACION.md](../INDICE_DOCUMENTACION.md)
+**Ultimo cambio:** 20 de agosto de 2026 - Estructura y contenido actualizado.
