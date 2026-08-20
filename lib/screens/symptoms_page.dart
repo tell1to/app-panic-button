@@ -80,32 +80,32 @@ class _SymptomsPageState extends State<SymptomsPage> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
-    final double headingFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
-    final double textFontSize = (screenWidth * 0.035).clamp(12.0, 16.0);
-    final double labelFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    final double titleFontSize = (screenWidth * 0.06).clamp(22.0, 28.0);
+    final double headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final double textFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
+    final double labelFontSize = (screenWidth * 0.035).clamp(13.0, 15.0);
     
-    // Paleta de colores pastel moderna
-    const Color pastelRosado = Color(0xFFFFD9E9);      // Rosado pastel suave
-    const Color pastelCeleste = Color(0xFFC8E6E0);     // Celeste/Menta claro
-    const Color pastelAzul = Color(0xFFD4E1F5);        // Azul pastel
-    const Color pastelVerde = Color(0xFFE8F5E9);       // Verde pastel claro
-    const Color fondoPrincipal = Color(0xFFFFFBF8);    // Fondo blanco cálido
-    const Color textoOscuro = Color(0xFF6B5B95);       // Púrpura oscuro suave
+    // Paleta de colores pastel amigable para adultos mayores
+    const Color rosaCoral = Color(0xFFF08080);        // Rosa coral suave
+    const Color celesteSuave = Color(0xFFB3E5E0);     // Azul celeste suave
+    const Color verdeClaro = Color(0xFF7FD8A8);       // Verde claro amigable
+    const Color naranjaCalido = Color(0xFFFFB366);    // Naranja durazno cálido
+    const Color fondoPrincipal = Color(0xFFF5FFFE);   // Fondo celeste muy claro
+    const Color textoOscuro = Color(0xFF556B7F);      // Gris azulado oscuro (mejor contraste)
     
     return Scaffold(
       backgroundColor: fondoPrincipal,
       appBar: AppBar(
-        title: Text('Registro de Síntomas', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: textoOscuro)),
-        backgroundColor: pastelRosado,
-        elevation: 0,
+        title: Text('Registro de Síntomas', style: TextStyle(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: rosaCoral,
+        elevation: 2,
         centerTitle: false,
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [pastelRosado, pastelCeleste.withAlpha((0.5 * 255).round())],
+              colors: [rosaCoral, naranjaCalido.withAlpha((0.7 * 255).round())],
             ),
           ),
         ),
@@ -114,31 +114,31 @@ class _SymptomsPageState extends State<SymptomsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         child: Column(
           children: [
-            // Header mejorado con colores pastel Rosado y Celeste
+            // Header mejorado con colores amigables
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [pastelCeleste.withAlpha((0.3 * 255).round()), Colors.white],
+                  colors: [celesteSuave.withAlpha((0.4 * 255).round()), Colors.white],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: pastelRosado.withAlpha((0.3 * 255).round()), width: 1.5),
+                border: Border.all(color: celesteSuave.withAlpha((0.4 * 255).round()), width: 2),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [pastelRosado, pastelCeleste],
+                        colors: [rosaCoral, naranjaCalido],
                       ),
                       shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: pastelRosado.withAlpha((0.3 * 255).round()), blurRadius: 8, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: rosaCoral.withAlpha((0.4 * 255).round()), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: Icon(Icons.medical_services, color: Colors.white, size: 26),
+                    child: Icon(Icons.medical_services, color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -146,19 +146,19 @@ class _SymptomsPageState extends State<SymptomsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Diario de Síntomas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: headingFontSize, color: textoOscuro)),
-                        Text('Registra cómo te sientes', style: TextStyle(fontSize: labelFontSize * 0.9, color: textoOscuro.withAlpha((0.6 * 255).round()))),
+                        Text('Registra cómo te sientes', style: TextStyle(fontSize: labelFontSize, color: textoOscuro.withAlpha((0.7 * 255).round()))),
                       ],
                     ),
                   ),
                   ElevatedButton.icon(
                     onPressed: () => _showAddDialog(),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text('Agregar', style: TextStyle(fontSize: labelFontSize)),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: Text('Agregar', style: TextStyle(fontSize: labelFontSize, fontWeight: FontWeight.w600)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: pastelRosado,
+                      backgroundColor: rosaCoral,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      elevation: 2,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   )
@@ -173,20 +173,20 @@ class _SymptomsPageState extends State<SymptomsPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: (screenWidth * 0.2).clamp(60.0, 100.0),
-                            height: (screenWidth * 0.2).clamp(60.0, 100.0),
+                            width: (screenWidth * 0.25).clamp(80.0, 120.0),
+                            height: (screenWidth * 0.25).clamp(80.0, 120.0),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [pastelRosado.withAlpha((0.3 * 255).round()), pastelCeleste.withAlpha((0.2 * 255).round())],
+                                colors: [celesteSuave.withAlpha((0.4 * 255).round()), naranjaCalido.withAlpha((0.2 * 255).round())],
                               ),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.sentiment_satisfied_outlined, size: (screenWidth * 0.15).clamp(60.0, 80.0), color: textoOscuro.withAlpha((0.3 * 255).round())),
+                            child: Icon(Icons.sentiment_satisfied_outlined, size: (screenWidth * 0.18).clamp(70.0, 90.0), color: naranjaCalido.withAlpha((0.7 * 255).round())),
                           ),
-                          const SizedBox(height: 16),
-                          Text('No hay entradas todavía', style: TextStyle(fontSize: textFontSize, color: textoOscuro.withAlpha((0.6 * 255).round()), fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 8),
-                          Text('Comienza registrando cómo te sientes hoy', style: TextStyle(fontSize: labelFontSize, color: textoOscuro.withAlpha((0.4 * 255).round()))),
+                          const SizedBox(height: 20),
+                          Text('No hay entradas todavía', style: TextStyle(fontSize: headingFontSize, color: textoOscuro, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          Text('Comienza registrando cómo te sientes hoy', style: TextStyle(fontSize: textFontSize, color: textoOscuro.withAlpha((0.6 * 255).round()))),
                         ],
                       ),
                     )
@@ -197,28 +197,28 @@ class _SymptomsPageState extends State<SymptomsPage> {
                         final dt = DateTime.parse(e['date'] as String);
                         final severity = e['severity'] as int;
                         return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          elevation: 2,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           color: Colors.white,
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: _severityColor(severity).withAlpha((0.2 * 255).round()),
-                                width: 1.5,
+                                color: _severityColor(severity).withAlpha((0.3 * 255).round()),
+                                width: 2,
                               ),
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  _severityColor(severity).withAlpha((0.05 * 255).round()),
+                                  _severityColor(severity).withAlpha((0.08 * 255).round()),
                                   Colors.white,
                                 ],
                               ),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(14),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -229,56 +229,58 @@ class _SymptomsPageState extends State<SymptomsPage> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Fecha', style: TextStyle(fontSize: labelFontSize, color: textoOscuro.withAlpha((0.6 * 255).round()), fontWeight: FontWeight.w600)),
-                                            const SizedBox(height: 4),
+                                            Text('Fecha', style: TextStyle(fontSize: labelFontSize, color: textoOscuro.withAlpha((0.7 * 255).round()), fontWeight: FontWeight.w700)),
+                                            const SizedBox(height: 6),
                                             Text(_formatDate(dt), style: TextStyle(fontSize: textFontSize, fontWeight: FontWeight.w600, color: textoOscuro)),
                                           ],
                                         ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                         decoration: BoxDecoration(
-                                          color: _severityColor(severity).withAlpha((0.15 * 255).round()),
+                                          color: _severityColor(severity).withAlpha((0.2 * 255).round()),
                                           borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(color: _severityColor(severity).withAlpha((0.3 * 255).round()), width: 1),
+                                          border: Border.all(color: _severityColor(severity).withAlpha((0.4 * 255).round()), width: 2),
                                         ),
-                                        child: Text('Sev $severity', style: TextStyle(color: _severityColor(severity), fontWeight: FontWeight.w700, fontSize: labelFontSize)),
+                                        child: Text('Sev ${severity}/10', style: TextStyle(color: _severityColor(severity), fontWeight: FontWeight.w700, fontSize: labelFontSize)),
                                       )
                                     ],
                                   ),
-                                  const SizedBox(height: 14),
-                                  Text('Síntomas', style: TextStyle(fontSize: labelFontSize, color: textoOscuro.withAlpha((0.6 * 255).round()), fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 6),
-                                  Text(e['symptoms'] as String, style: TextStyle(fontSize: textFontSize, color: textoOscuro.withAlpha((0.8 * 255).round()), height: 1.4)),
-                                  const SizedBox(height: 14),
+                                  const SizedBox(height: 16),
+                                  Text('Síntomas', style: TextStyle(fontSize: labelFontSize, color: textoOscuro.withAlpha((0.7 * 255).round()), fontWeight: FontWeight.w700)),
+                                  const SizedBox(height: 8),
+                                  Text(e['symptoms'] as String, style: TextStyle(fontSize: textFontSize, color: textoOscuro, height: 1.5, fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       Container(
                                         decoration: BoxDecoration(
-                                          color: pastelCeleste.withAlpha((0.2 * 255).round()),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: verdeClaro,
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [BoxShadow(color: verdeClaro.withAlpha((0.4 * 255).round()), blurRadius: 6, offset: const Offset(0, 2))],
                                         ),
                                         child: IconButton(
-                                          icon: Icon(Icons.edit, size: 18, color: pastelCeleste.withAlpha((0.8 * 255).round())),
+                                          icon: Icon(Icons.edit, size: 22, color: Colors.white),
                                           onPressed: () => _showEditDialog(i),
                                           tooltip: 'Editar',
-                                          constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                                          padding: const EdgeInsets.all(8),
+                                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                          padding: const EdgeInsets.all(12),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 12),
                                       Container(
                                         decoration: BoxDecoration(
-                                          color: pastelRosado.withAlpha((0.2 * 255).round()),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: rosaCoral,
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [BoxShadow(color: rosaCoral.withAlpha((0.4 * 255).round()), blurRadius: 6, offset: const Offset(0, 2))],
                                         ),
                                         child: IconButton(
-                                          icon: Icon(Icons.delete_outline, size: 18, color: pastelRosado.withAlpha((0.8 * 255).round())),
+                                          icon: Icon(Icons.delete_outline, size: 22, color: Colors.white),
                                           onPressed: () => _deleteEntry(i),
                                           tooltip: 'Eliminar',
-                                          constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                                          padding: const EdgeInsets.all(8),
+                                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                          padding: const EdgeInsets.all(12),
                                         ),
                                       ),
                                     ],
@@ -311,11 +313,10 @@ class _SymptomsPageState extends State<SymptomsPage> {
   }
   // Show dialog to add a new entry
   Future<void> _showAddDialog() async {
-    const Color pastelRosado = Color(0xFFFFD9E9);
-    const Color pastelCeleste = Color(0xFFC8E6E0);
-    const Color pastelAzul = Color(0xFFD4E1F5);
-    const Color textoOscuro = Color(0xFF6B5B95);
-    const Color fondoDialog = Color(0xFFFFFBF8);
+    const Color rosaCoral = Color(0xFFF08080);
+    const Color celesteSuave = Color(0xFFB3E5E0);
+    const Color textoOscuro = Color(0xFF556B7F);
+    const Color fondoDialog = Color(0xFFF5FFFE);
     
     await showDialog<void>(
       context: context,
@@ -326,12 +327,12 @@ class _SymptomsPageState extends State<SymptomsPage> {
         
         return StatefulBuilder(builder: (ctx2, setState2) {
           final double dialogScreenWidth = MediaQuery.of(context).size.width;
-          final double dialogTitleSize = (dialogScreenWidth * 0.045).clamp(16.0, 20.0);
-          final double dialogTextSize = (dialogScreenWidth * 0.035).clamp(12.0, 14.0);
+          final double dialogTitleSize = (dialogScreenWidth * 0.055).clamp(19.0, 24.0);
+          final double dialogTextSize = (dialogScreenWidth * 0.04).clamp(14.0, 16.0);
           
           return AlertDialog(
             backgroundColor: fondoDialog,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             title: Text('Nueva entrada', style: TextStyle(fontSize: dialogTitleSize, fontWeight: FontWeight.bold, color: textoOscuro)),
             content: SingleChildScrollView(
               child: Column(
@@ -339,65 +340,65 @@ class _SymptomsPageState extends State<SymptomsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: pastelCeleste.withAlpha((0.1 * 255).round()),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: pastelRosado.withAlpha((0.2 * 255).round())),
+                      color: celesteSuave.withAlpha((0.15 * 255).round()),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: celesteSuave.withAlpha((0.3 * 255).round()), width: 2),
                     ),
                     child: Row(children: [
-                      Expanded(child: Text('Fecha: ${_formatDate(chosen)}', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro, fontWeight: FontWeight.w500))),
+                      Expanded(child: Text('Fecha: ${_formatDate(chosen)}', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro, fontWeight: FontWeight.w600))),
                       TextButton(
                         onPressed: () async {
                           final DateTime? picked = await showDatePicker(context: ctx2, initialDate: chosen, firstDate: DateTime(1900), lastDate: DateTime.now().add(const Duration(days: 365)));
                           if (picked != null) setState2(() { chosen = picked; });
                         },
-                        child: Text('Cambiar', style: TextStyle(fontSize: dialogTextSize, color: pastelRosado))
+                        child: Text('Cambiar', style: TextStyle(fontSize: dialogTextSize * 0.9, color: rosaCoral, fontWeight: FontWeight.w600))
                       )
                     ]),
                   ),
-                  const SizedBox(height: 16),
-                  Text('Describe los síntomas', style: TextStyle(fontSize: dialogTextSize * 0.9, color: textoOscuro, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 18),
+                  Text('Describe los síntomas', style: TextStyle(fontSize: dialogTextSize * 0.95, color: textoOscuro, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: txt,
                     maxLines: 4,
-                    style: TextStyle(fontSize: dialogTextSize, color: textoOscuro),
+                    style: TextStyle(fontSize: dialogTextSize, color: textoOscuro, fontWeight: FontWeight.w500),
                     decoration: InputDecoration(
                       hintText: 'Ej: Dolor de cabeza, fiebre...',
-                      hintStyle: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.4 * 255).round())),
+                      hintStyle: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.5 * 255).round())),
                       filled: true,
-                      fillColor: pastelCeleste.withAlpha((0.05 * 255).round()),
+                      fillColor: celesteSuave.withAlpha((0.08 * 255).round()),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: pastelRosado.withAlpha((0.2 * 255).round())),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: celesteSuave.withAlpha((0.3 * 255).round()), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: pastelRosado.withAlpha((0.2 * 255).round())),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: celesteSuave.withAlpha((0.3 * 255).round()), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: pastelRosado, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: rosaCoral, width: 2),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text('Severidad: ${sev.round()}/10', style: TextStyle(fontSize: dialogTextSize * 0.9, color: textoOscuro, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 18),
+                  Text('Severidad: ${sev.round()}/10', style: TextStyle(fontSize: dialogTextSize * 0.95, color: textoOscuro, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: pastelCeleste.withAlpha((0.1 * 255).round()),
-                      borderRadius: BorderRadius.circular(10),
+                      color: celesteSuave.withAlpha((0.15 * 255).round()),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Slider(
                       value: sev,
                       min: 1,
                       max: 10,
                       divisions: 9,
                       activeColor: _severityColor(sev.round()),
-                      inactiveColor: pastelCeleste.withAlpha((0.3 * 255).round()),
+                      inactiveColor: celesteSuave.withAlpha((0.3 * 255).round()),
                       label: sev.round().toString(),
                       onChanged: (v) => setState2(() { sev = v; }),
                     ),
@@ -408,7 +409,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
             actions: [
               TextButton(
                 onPressed: () { if (mounted) Navigator.of(ctx).pop(); },
-                child: Text('Cancelar', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.6 * 255).round())))
+                child: Text('Cancelar', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.7 * 255).round()), fontWeight: FontWeight.w600))
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -422,13 +423,13 @@ class _SymptomsPageState extends State<SymptomsPage> {
                   navigator.pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: pastelRosado,
+                  backgroundColor: rosaCoral,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Text('Guardar', style: TextStyle(fontSize: dialogTextSize, fontWeight: FontWeight.w600))
+                child: Text('Guardar', style: TextStyle(fontSize: dialogTextSize, fontWeight: FontWeight.w700))
               )
             ],
           );
@@ -439,11 +440,10 @@ class _SymptomsPageState extends State<SymptomsPage> {
 
   // Show dialog to edit an existing entry at index i
   Future<void> _showEditDialog(int i) async {
-    const Color pastelRosado = Color(0xFFFFD9E9);
-    const Color pastelCeleste = Color(0xFFC8E6E0);
-    const Color pastelAzul = Color(0xFFD4E1F5);
-    const Color textoOscuro = Color(0xFF6B5B95);
-    const Color fondoDialog = Color(0xFFFFFBF8);
+    const Color rosaCoral = Color(0xFFF08080);
+    const Color celesteSuave = Color(0xFFB3E5E0);
+    const Color textoOscuro = Color(0xFF556B7F);
+    const Color fondoDialog = Color(0xFFF5FFFE);
     
     final Map<String, dynamic> entry = Map<String, dynamic>.from(_entries[i]);
 
@@ -456,12 +456,12 @@ class _SymptomsPageState extends State<SymptomsPage> {
 
         return StatefulBuilder(builder: (ctx2, setState2) {
           final double dialogScreenWidth = MediaQuery.of(context).size.width;
-          final double dialogTitleSize = (dialogScreenWidth * 0.045).clamp(16.0, 20.0);
-          final double dialogTextSize = (dialogScreenWidth * 0.035).clamp(12.0, 14.0);
+          final double dialogTitleSize = (dialogScreenWidth * 0.055).clamp(19.0, 24.0);
+          final double dialogTextSize = (dialogScreenWidth * 0.04).clamp(14.0, 16.0);
           
           return AlertDialog(
             backgroundColor: fondoDialog,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             title: Text('Editar entrada', style: TextStyle(fontSize: dialogTitleSize, fontWeight: FontWeight.bold, color: textoOscuro)),
             content: SingleChildScrollView(
               child: Column(
@@ -469,65 +469,65 @@ class _SymptomsPageState extends State<SymptomsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: pastelCeleste.withAlpha((0.1 * 255).round()),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: pastelRosado.withAlpha((0.2 * 255).round())),
+                      color: celesteSuave.withAlpha((0.15 * 255).round()),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: celesteSuave.withAlpha((0.3 * 255).round()), width: 2),
                     ),
                     child: Row(children: [
-                      Expanded(child: Text('Fecha: ${_formatDate(chosen)}', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro, fontWeight: FontWeight.w500))),
+                      Expanded(child: Text('Fecha: ${_formatDate(chosen)}', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro, fontWeight: FontWeight.w600))),
                       TextButton(
                         onPressed: () async {
                           final DateTime? picked = await showDatePicker(context: ctx2, initialDate: chosen, firstDate: DateTime(1900), lastDate: DateTime.now().add(const Duration(days: 365)));
                           if (picked != null) setState2(() { chosen = picked; });
                         },
-                        child: Text('Cambiar', style: TextStyle(fontSize: dialogTextSize, color: pastelRosado))
+                        child: Text('Cambiar', style: TextStyle(fontSize: dialogTextSize * 0.9, color: rosaCoral, fontWeight: FontWeight.w600))
                       )
                     ]),
                   ),
-                  const SizedBox(height: 16),
-                  Text('Describe los síntomas', style: TextStyle(fontSize: dialogTextSize * 0.9, color: textoOscuro, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 18),
+                  Text('Describe los síntomas', style: TextStyle(fontSize: dialogTextSize * 0.95, color: textoOscuro, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: txt,
                     maxLines: 4,
-                    style: TextStyle(fontSize: dialogTextSize, color: textoOscuro),
+                    style: TextStyle(fontSize: dialogTextSize, color: textoOscuro, fontWeight: FontWeight.w500),
                     decoration: InputDecoration(
                       hintText: 'Ej: Dolor de cabeza, fiebre...',
-                      hintStyle: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.4 * 255).round())),
+                      hintStyle: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.5 * 255).round())),
                       filled: true,
-                      fillColor: pastelCeleste.withAlpha((0.05 * 255).round()),
+                      fillColor: celesteSuave.withAlpha((0.08 * 255).round()),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: pastelRosado.withAlpha((0.2 * 255).round())),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: celesteSuave.withAlpha((0.3 * 255).round()), width: 2),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: pastelRosado.withAlpha((0.2 * 255).round())),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: celesteSuave.withAlpha((0.3 * 255).round()), width: 2),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: pastelRosado, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: rosaCoral, width: 2),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text('Severidad: ${sev.round()}/10', style: TextStyle(fontSize: dialogTextSize * 0.9, color: textoOscuro, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 18),
+                  Text('Severidad: ${sev.round()}/10', style: TextStyle(fontSize: dialogTextSize * 0.95, color: textoOscuro, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: pastelCeleste.withAlpha((0.1 * 255).round()),
-                      borderRadius: BorderRadius.circular(10),
+                      color: celesteSuave.withAlpha((0.15 * 255).round()),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Slider(
                       value: sev,
                       min: 1,
                       max: 10,
                       divisions: 9,
                       activeColor: _severityColor(sev.round()),
-                      inactiveColor: pastelCeleste.withAlpha((0.3 * 255).round()),
+                      inactiveColor: celesteSuave.withAlpha((0.3 * 255).round()),
                       label: sev.round().toString(),
                       onChanged: (v) => setState2(() { sev = v; }),
                     ),
@@ -538,7 +538,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
             actions: [
               TextButton(
                 onPressed: () { if (mounted) Navigator.of(ctx).pop(); },
-                child: Text('Cancelar', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.6 * 255).round())))
+                child: Text('Cancelar', style: TextStyle(fontSize: dialogTextSize, color: textoOscuro.withAlpha((0.7 * 255).round()), fontWeight: FontWeight.w600))
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -560,13 +560,13 @@ class _SymptomsPageState extends State<SymptomsPage> {
                   navigator.pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: pastelRosado,
+                  backgroundColor: rosaCoral,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Text('Guardar', style: TextStyle(fontSize: dialogTextSize, fontWeight: FontWeight.w600))
+                child: Text('Guardar', style: TextStyle(fontSize: dialogTextSize, fontWeight: FontWeight.w700))
               )
             ],
           );
