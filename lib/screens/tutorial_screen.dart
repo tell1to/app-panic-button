@@ -658,6 +658,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       filled: true,
                       fillColor: Colors.white,
                       errorText: _ciError.isEmpty ? null : _ciError,
+                      errorStyle: const TextStyle(color: Colors.white),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
